@@ -40,10 +40,89 @@
     if (document.scrollingElement) document.scrollingElement.scrollTop = sc;
   };
 
-  /* النجوم والمذنبات */
+  /* ---------- خلفية نجوم واقعية (بأسلوب صور ناسا/هابل) مرسومة بالكانفس ---------- */
+  function rgba(hex, a) {
+    const h = hex.replace('#', '');
+    return `rgba(${parseInt(h.slice(0, 2), 16)},${parseInt(h.slice(2, 4), 16)},${parseInt(h.slice(4, 6), 16)},${a})`;
+  }
+
+  function paintGalaxy() {
+    let cv = document.getElementById('galaxy');
+    if (!cv) { cv = document.createElement('canvas'); cv.id = 'galaxy'; document.body.prepend(cv); }
+    const w = cv.width = Math.max(window.innerWidth, 800);
+    const h = cv.height = Math.max(window.innerHeight, 600);
+    const ctx = cv.getContext('2d');
+    const rnd = Math.random;
+
+    ctx.fillStyle = '#04050c';
+    ctx.fillRect(0, 0, w, h);
+
+    /* سدم ملونة خافتة مثل صور هابل */
+    ctx.globalCompositeOperation = 'lighter';
+    const nebulae = [
+      ['#3b5bd9', 0.10], ['#7048d9', 0.09], ['#2a7ab8', 0.07],
+      ['#b8722a', 0.05], ['#6a35a8', 0.08], ['#2f8f8f', 0.05], ['#8a3a6b', 0.06],
+    ];
+    nebulae.forEach(([col, alpha]) => {
+      const x = rnd() * w, y = rnd() * h, r = 170 + rnd() * 380;
+      const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, rgba(col, alpha));
+      g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(x - r, y - r, r * 2, r * 2);
+    });
+
+    /* نجوم: أغلبها بيضاء-زرقاء وبعضها دافئة برتقالية كما في الصور الفلكية */
+    const colors = ['#ffffff', '#dfe8ff', '#cdd9ff', '#ffd9a0', '#ffb46b', '#9ec1ff', '#fff2cc'];
+    function star(x, y, boost) {
+      const s = Math.pow(rnd(), 3) * 1.8 + 0.4 + (boost || 0);
+      const c = colors[Math.floor(rnd() * colors.length)];
+      ctx.globalAlpha = 0.35 + rnd() * 0.65;
+      if (s > 1.4) { ctx.shadowBlur = 5; ctx.shadowColor = c; } else ctx.shadowBlur = 0;
+      ctx.fillStyle = c;
+      ctx.beginPath();
+      ctx.arc(x, y, s, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    const total = Math.round((w * h) / 1300);
+    for (let i = 0; i < total; i++) star(rnd() * w, rnd() * h, 0);
+
+    /* عناقيد نجمية كثيفة */
+    for (let k = 0; k < 5; k++) {
+      const cx = rnd() * w, cy = rnd() * h, spread = 60 + rnd() * 120;
+      for (let i = 0; i < 130; i++) {
+        star(cx + (rnd() + rnd() + rnd() - 1.5) * spread, cy + (rnd() + rnd() + rnd() - 1.5) * spread, 0);
+      }
+    }
+
+    /* نجوم ساطعة بأشعة انكسارية رباعية (مثل صور هابل) */
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
+    for (let k = 0; k < 7; k++) {
+      const x = rnd() * w, y = rnd() * h;
+      const len = 7 + rnd() * 14;
+      const c = k % 3 === 0 ? '#ffd9a0' : '#eaf2ff';
+      const g = ctx.createRadialGradient(x, y, 0, x, y, len * 0.7);
+      g.addColorStop(0, rgba(c === '#ffd9a0' ? '#ffd9a0' : '#ffffff', 0.9));
+      g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(x, y, len * 0.7, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = rgba(c === '#ffd9a0' ? '#ffd9a0' : '#ffffff', 0.65);
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x - len, y); ctx.lineTo(x + len, y);
+      ctx.moveTo(x, y - len); ctx.lineTo(x, y + len);
+      ctx.stroke();
+    }
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = 1;
+  }
+
+  /* نجوم متلألئة + مذنبات فوق الخلفية الثابتة */
   function initStars() {
     const layer = document.getElementById('stars');
-    const n = Math.min(150, Math.floor(window.innerWidth / 9));
+    layer.innerHTML = '';
+    const n = Math.min(70, Math.floor(window.innerWidth / 18));
     for (let i = 0; i < n; i++) {
       const size = Math.random() < 0.85 ? 2 : 3;
       layer.append(el('i', {
@@ -60,8 +139,15 @@
     }
   }
 
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => { paintGalaxy(); }, 350);
+  });
+
   window.addEventListener('hashchange', SM.render);
   document.addEventListener('DOMContentLoaded', () => {
+    paintGalaxy();
     initStars();
     SM.render();
   });

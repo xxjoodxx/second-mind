@@ -26,14 +26,16 @@ html { scroll-behavior: smooth; }
 body {
   font-family: var(--font);
   color: var(--ink);
-  background:
-    radial-gradient(1100px 700px at 85% -10%, rgba(59, 47, 130, .35), transparent 60%),
-    radial-gradient(900px 700px at -10% 30%, rgba(23, 68, 120, .28), transparent 60%),
-    radial-gradient(800px 800px at 50% 120%, rgba(120, 35, 90, .18), transparent 60%),
-    var(--bg);
-  background-attachment: fixed;
+  background: #04050c;
   min-height: 100vh;
   overflow-x: hidden;
+}
+
+/* خلفية النجوم الواقعية (كانفس بأسلوب صور ناسا) */
+#galaxy {
+  position: fixed; inset: 0;
+  width: 100vw; height: 100vh;
+  z-index: 0; pointer-events: none;
 }
 
 ::selection { background: rgba(103, 232, 249, .3); }
@@ -54,6 +56,7 @@ a.link:hover { text-decoration: underline; }
 
 /* ============ النجوم والمذنبات ============ */
 #stars { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+#app { position: relative; z-index: 1; }
 
 .star {
   position: absolute; display: block; border-radius: 50%;
@@ -183,7 +186,7 @@ textarea.inp { resize: vertical; line-height: 1.7; }
 .qform > .btn { height: 39px; }
 
 /* بطاقات */
-.card { padding: 18px 20px; margin-bottom: 16px; animation: fadeUp .45s ease; }
+.card { padding: 18px 20px; margin-bottom: 16px; }
 .card__head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 14px; }
 .card__title { font-size: 16px; font-weight: 800; }
 .card__sub { font-size: 11.5px; color: var(--faint); margin-top: 3px; }
@@ -196,7 +199,6 @@ textarea.inp { resize: vertical; line-height: 1.7; }
 .stat {
   padding: 14px 16px; border-radius: 18px;
   border-inline-start: 3px solid var(--sc, var(--aqua));
-  animation: fadeUp .45s ease;
 }
 .stat__top { display: flex; align-items: center; gap: 7px; margin-bottom: 7px; }
 .stat__icon { font-size: 16px; }
@@ -329,165 +331,63 @@ textarea.inp { resize: vertical; line-height: 1.7; }
 .plusbtn:hover .plusbtn__plus { transform: scale(1.12) rotate(90deg); box-shadow: 0 0 34px rgba(103, 232, 249, .5); }
 .plusbtn__hint { font-size: 10.5px; color: rgba(103, 232, 249, .75); font-weight: 700; }
 
-.solar { position: relative; width: min(88vmin, 700px); aspect-ratio: 1; }
+/* حاوية عريضة → المسارات الدائرية بالنِّسَب تتحول لإهليلجات منظورية مثل صور المجموعة الشمسية */
+.solar { position: relative; width: min(100%, 1000px); aspect-ratio: 1.6; margin: 0 auto; }
 
 .orbit {
   position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-  border: 1px solid rgba(255, 255, 255, .1); border-radius: 50%;
-  box-shadow: 0 0 40px rgba(103, 232, 249, .03) inset;
+  border: 1px solid rgba(255, 255, 255, .3); border-radius: 50%;
+  box-shadow: 0 0 26px rgba(255, 255, 255, .05);
 }
-.orbit--1 { width: 47%; height: 47%; }
-.orbit--2 { width: 70%; height: 70%; }
-.orbit--3 { width: 93%; height: 93%; }
+.orbit--1 { width: 60%; height: 60%; }
+.orbit--2 { width: 80%; height: 80%; }
+.orbit--3 { width: 96%; height: 96%; }
 
-/* الشمس */
-.sun-wrap { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 10px; z-index: 5; }
-.sun { position: relative; width: 128px; height: 128px; border-radius: 50%; transition: transform .3s; }
+/* الشمس البكسلية */
+.sun-wrap { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 8px; z-index: 5; }
+.sun { position: relative; width: 175px; height: 175px; border-radius: 50%; transition: transform .3s; animation: sunpulse 4.5s ease-in-out infinite; }
 .sun:hover { transform: scale(1.06); }
-.sun__core { position: absolute; inset: 0; border-radius: 50%; display: block; animation: sunpulse 4.5s ease-in-out infinite; }
-.sun__corona {
-  position: absolute; inset: -26%; border-radius: 50%; display: block;
-  background: repeating-conic-gradient(from 0deg, var(--ray, rgba(255, 200, 90, .35)) 0deg 5deg, transparent 5deg 14deg);
-  -webkit-mask: radial-gradient(circle, transparent 38%, #000 42%, transparent 72%);
-  mask: radial-gradient(circle, transparent 38%, #000 42%, transparent 72%);
-  animation: spin 50s linear infinite;
-  opacity: .8;
-}
+.sun__px { position: relative; z-index: 1; width: 100%; height: 100%; display: block; image-rendering: pixelated; }
 @keyframes spin { to { transform: rotate(360deg); } }
-@keyframes sunpulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.035); } }
+@keyframes sunpulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.03); } }
 
-.sun--gold .sun__core, .sun--idle .sun__core {
-  background: radial-gradient(circle at 42% 38%, #fffbe8, #ffe08a 32%, #ffb84d 62%, #f97316 100%);
-  box-shadow: 0 0 50px 16px rgba(255, 190, 80, .5), 0 0 130px 55px rgba(255, 160, 60, .22);
+/* توهج ضوئي إضافي (screen) يضيء النجوم خلفه بدل أن يحجبها */
+.sun::before {
+  content: ''; position: absolute; inset: -45%;
+  border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle, var(--glow1, rgba(255,205,100,.6)) 0%, var(--glow2, rgba(255,140,40,.2)) 40%, transparent 70%);
+  mix-blend-mode: screen;
 }
-.sun--gold { --ray: rgba(255, 200, 90, .4); }
-.sun--idle .sun__core { opacity: .82; box-shadow: 0 0 34px 10px rgba(255, 190, 80, .3), 0 0 90px 40px rgba(255, 160, 60, .12); }
-.sun--idle { --ray: rgba(255, 200, 90, .2); }
-.sun--white .sun__core {
-  background: radial-gradient(circle at 42% 38%, #ffffff, #f1f5f9 40%, #cbd5e1 75%, #94a3b8 100%);
-  box-shadow: 0 0 50px 16px rgba(255, 255, 255, .5), 0 0 130px 55px rgba(226, 232, 240, .22);
-}
-.sun--white { --ray: rgba(255, 255, 255, .4); }
-.sun--green .sun__core {
-  background: radial-gradient(circle at 42% 38%, #ecfdf5, #86efac 35%, #34d399 65%, #059669 100%);
-  box-shadow: 0 0 50px 16px rgba(74, 222, 128, .5), 0 0 130px 55px rgba(52, 211, 153, .22);
-}
-.sun--green { --ray: rgba(110, 231, 183, .4); }
-.sun--red .sun__core {
-  background: radial-gradient(circle at 42% 38%, #fff1f2, #fca5a5 35%, #ef4444 68%, #991b1b 100%);
-  box-shadow: 0 0 50px 16px rgba(248, 113, 113, .5), 0 0 130px 55px rgba(239, 68, 68, .22);
-}
-.sun--red { --ray: rgba(252, 165, 165, .4); }
+.sun--gold  { --glow1: rgba(255, 205, 100, .75); --glow2: rgba(255, 140, 40, .28); }
+.sun--idle  { --glow1: rgba(255, 205, 100, .45); --glow2: rgba(255, 140, 40, .15); }
+.sun--white { --glow1: rgba(255, 255, 255, .7);  --glow2: rgba(200, 215, 235, .22); }
+.sun--green { --glow1: rgba(120, 240, 170, .7);  --glow2: rgba(52, 211, 153, .22); }
+.sun--red   { --glow1: rgba(255, 140, 140, .7);  --glow2: rgba(239, 68, 68, .22); }
 
 .sun__label { text-align: center; pointer-events: none; }
 .sun__title { display: block; font-size: 11px; color: var(--faint); font-weight: 700; }
 .sun__tier { display: block; font-size: 12.5px; font-weight: 800; margin-top: 2px; text-shadow: 0 2px 10px rgba(0, 0, 0, .8); }
 
-/* الكواكب */
+/* الكواكب البكسلية */
 .planet {
   position: absolute; transform: translate(-50%, -50%);
-  display: flex; flex-direction: column; align-items: center; gap: 7px;
-  z-index: 6; transition: z-index 0s;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
 }
-.planet:hover { z-index: 15; }
+.planet:hover { z-index: 15 !important; }
 .planet__body {
-  position: relative; width: var(--psize, 70px); height: var(--psize, 70px);
-  border-radius: 50%; display: block;
+  position: relative; width: var(--psize, 96px); height: var(--psize, 96px);
+  display: block;
   animation: floaty 7s ease-in-out infinite;
   transition: transform .25s;
 }
 .planet:nth-child(odd) .planet__body { animation-delay: -3.2s; }
-.planet:hover .planet__body { transform: scale(1.14); }
-.planet__texture, .planet__shine { position: absolute; inset: 0; border-radius: 50%; display: block; }
-.planet__shine {
-  background: radial-gradient(circle at 30% 26%, rgba(255, 255, 255, .55), rgba(255, 255, 255, .08) 38%, transparent 50%);
-  box-shadow: inset -16px -13px 30px rgba(0, 0, 0, .62);
+.planet:hover .planet__body { transform: scale(1.12); }
+.planet__px {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 0 14px color-mix(in srgb, var(--pc, #67e8f9) 40%, transparent));
 }
-
-.planet--health .planet__body {
-  background: radial-gradient(circle at 34% 30%, #8ff5c6, #2ec27e 45%, #0a6b4a 82%);
-  box-shadow: 0 0 26px rgba(52, 211, 153, .45);
-}
-.planet--health .planet__texture {
-  background:
-    radial-gradient(30% 22% at 62% 38%, rgba(9, 92, 66, .85), transparent 70%),
-    radial-gradient(24% 20% at 30% 62%, rgba(9, 92, 66, .75), transparent 70%),
-    radial-gradient(18% 14% at 72% 70%, rgba(13, 118, 87, .8), transparent 70%),
-    radial-gradient(36% 30% at 45% 20%, rgba(190, 242, 255, .25), transparent 70%);
-}
-
-.planet--learning .planet__body {
-  background: radial-gradient(circle at 34% 30%, #bfe6ff, #38a2f8 48%, #143b8a 85%);
-  box-shadow: 0 0 26px rgba(56, 189, 248, .45);
-}
-.planet--learning .planet__texture {
-  background:
-    radial-gradient(45% 16% at 30% 40%, rgba(255, 255, 255, .4), transparent 70%),
-    radial-gradient(50% 14% at 70% 58%, rgba(255, 255, 255, .3), transparent 70%),
-    radial-gradient(38% 12% at 45% 75%, rgba(255, 255, 255, .22), transparent 70%),
-    radial-gradient(30% 24% at 68% 24%, rgba(12, 44, 120, .5), transparent 70%);
-}
-
-.planet--finance .planet__body {
-  background: radial-gradient(circle at 34% 30%, #ffe9ad, #f2b93b 45%, #9a5b13 85%);
-  box-shadow: 0 0 26px rgba(251, 191, 36, .45);
-}
-.planet--finance .planet__texture {
-  background:
-    linear-gradient(174deg, transparent 18%, rgba(255, 255, 255, .22) 22%, transparent 27%,
-      rgba(140, 80, 15, .4) 36%, transparent 42%,
-      rgba(255, 255, 255, .16) 52%, transparent 58%,
-      rgba(140, 80, 15, .35) 68%, transparent 75%),
-    radial-gradient(16% 12% at 66% 62%, rgba(200, 90, 20, .8), transparent 75%);
-}
-
-.planet--hobbies .planet__body {
-  background: radial-gradient(circle at 34% 30%, #ffd6fd, #d946ef 48%, #6b21a8 85%);
-  box-shadow: 0 0 28px rgba(232, 121, 249, .5);
-}
-.planet--hobbies .planet__texture {
-  background:
-    radial-gradient(8% 8% at 60% 30%, rgba(255, 255, 255, .8), transparent 70%),
-    radial-gradient(5% 5% at 36% 55%, rgba(255, 255, 255, .7), transparent 70%),
-    radial-gradient(6% 6% at 72% 68%, rgba(255, 255, 255, .65), transparent 70%),
-    radial-gradient(30% 24% at 28% 28%, rgba(255, 190, 255, .3), transparent 70%);
-}
-.planet__ring {
-  position: absolute; inset: -34% -38%; display: block; z-index: -1;
-  background: conic-gradient(#f87171, #fbbf24, #4ade80, #38bdf8, #a78bfa, #f472b6, #f87171);
-  border-radius: 50%;
-  -webkit-mask: radial-gradient(circle, transparent 56%, #000 58% 70%, transparent 72%);
-  mask: radial-gradient(circle, transparent 56%, #000 58% 70%, transparent 72%);
-  transform: rotateX(72deg);
-  opacity: .85;
-  animation: spin 30s linear infinite;
-}
-
-.planet--study .planet__body {
-  background: radial-gradient(circle at 34% 30%, #e8c9a6, #b0793f 48%, #5c3317 85%);
-  box-shadow: 0 0 24px rgba(193, 154, 107, .45);
-}
-.planet--study .planet__texture {
-  background:
-    radial-gradient(13% 13% at 62% 56%, rgba(60, 30, 10, .8) 45%, rgba(255, 255, 255, .1) 58%, transparent 65%),
-    radial-gradient(9% 9% at 38% 36%, rgba(60, 30, 10, .7) 45%, transparent 65%),
-    radial-gradient(7% 7% at 50% 72%, rgba(60, 30, 10, .75) 45%, transparent 65%),
-    radial-gradient(10% 10% at 74% 30%, rgba(70, 38, 14, .6) 45%, transparent 65%);
-}
-
-.planet--custom .planet__body {
-  background: radial-gradient(circle at 34% 30%,
-      color-mix(in srgb, var(--pc, #f472b6) 30%, #ffffff),
-      var(--pc, #f472b6) 50%,
-      color-mix(in srgb, var(--pc, #f472b6) 40%, #000000) 88%);
-  box-shadow: 0 0 24px color-mix(in srgb, var(--pc, #f472b6) 55%, transparent);
-}
-.planet--custom .planet__texture {
-  background:
-    radial-gradient(28% 20% at 60% 40%, color-mix(in srgb, var(--pc, #f472b6) 45%, #000) , transparent 72%),
-    radial-gradient(20% 16% at 34% 64%, color-mix(in srgb, var(--pc, #f472b6) 35%, #000), transparent 72%);
-  opacity: .6;
-}
+.planet:hover .planet__px { filter: drop-shadow(0 0 22px color-mix(in srgb, var(--pc, #67e8f9) 65%, transparent)); }
 
 .planet__label { display: flex; flex-direction: column; align-items: center; gap: 2px; pointer-events: none; }
 .planet__name { font-size: 13.5px; font-weight: 800; text-shadow: 0 2px 12px rgba(0, 0, 0, .9); }
@@ -807,8 +707,10 @@ textarea.inp { resize: vertical; line-height: 1.7; }
 @media (max-width: 1080px) {
   .home-grid { grid-template-columns: minmax(0, 1fr); }
   .home-side { position: static; order: 2; }
-  .solar-wrap { order: 1; min-height: auto; padding: 50px 0 20px; }
-  .solar { width: min(94vw, 560px); }
+  .solar-wrap { order: 1; min-height: auto; padding: 55px 0 20px; }
+  .solar { width: min(96vw, 720px); aspect-ratio: 1.45; }
+  .planet__body { width: calc(var(--psize) * .72); height: calc(var(--psize) * .72); }
+  .sun { width: 130px; height: 130px; }
 
   .pp__layout { grid-template-columns: minmax(0, 1fr); }
   .pp__side { position: static; flex-direction: column; }
@@ -824,8 +726,9 @@ textarea.inp { resize: vertical; line-height: 1.7; }
   .greet__sub { font-size: 10px; }
   .avatar { width: 42px; height: 42px; }
   .home-grid { padding: 4px 10px; }
-  .sun { width: 96px; height: 96px; }
-  .planet__body { --psize: 52px !important; width: 52px; height: 52px; }
+  .solar { aspect-ratio: 1.2; }
+  .sun { width: 92px; height: 92px; }
+  .planet__body { width: calc(var(--psize) * .48); height: calc(var(--psize) * .48); }
   .planet__name { font-size: 11px; }
   .planet__en { display: none; }
   .plusbtn__hint { display: none; }
