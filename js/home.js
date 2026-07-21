@@ -93,10 +93,7 @@
   /* ---------- الإعدادات ---------- */
   function settingsModal() {
     const Cc = SM.C, S = SM.store.state;
-    const nameInp = el('input', { class: 'inp', value: S.profile.name, on: { change: (e) => { S.profile.name = e.target.value.trim() || 'Joud'; SM.store.save(); SM.refresh(); } } });
-    const curInp = el('input', { class: 'inp', value: S.settings.currency, on: { change: (e) => { S.settings.currency = e.target.value.trim() || 'ر.س'; SM.store.save(); SM.refresh(); } } });
-    const waterInp = el('input', { class: 'inp', type: 'number', min: 1, max: 20, value: S.settings.waterGoal, on: { change: (e) => { S.settings.waterGoal = U.clamp(Number(e.target.value) || 8, 1, 20); SM.store.save(); SM.refresh(); } } });
-    const sportInp = el('input', { class: 'inp', type: 'number', min: 1, max: 7, value: S.settings.sportWeeklyGoal, on: { change: (e) => { S.settings.sportWeeklyGoal = U.clamp(Number(e.target.value) || 4, 1, 7); SM.store.save(); SM.refresh(); } } });
+    const nameInp = el('input', { class: 'inp inp--short', value: S.profile.name, on: { change: (e) => { S.profile.name = e.target.value.trim() || 'Joud'; SM.store.save(); SM.refresh(); } } });
 
     const importBtn = el('button', {
       class: 'btn',
@@ -120,12 +117,7 @@
     }, '📥 استيراد نسخة');
 
     Cc.modal('⚙️ الإعدادات', el('div', { class: 'settings' },
-      el('label', { class: 'qform__field' }, el('span', { class: 'qform__label' }, 'اسمك (يظهر في الترحيب)'), nameInp),
-      el('div', { class: 'row gap wrap' },
-        el('label', { class: 'qform__field' }, el('span', { class: 'qform__label' }, 'العملة'), curInp),
-        el('label', { class: 'qform__field' }, el('span', { class: 'qform__label' }, 'هدف الماء (أكواب/يوم)'), waterInp),
-        el('label', { class: 'qform__field' }, el('span', { class: 'qform__label' }, 'هدف الرياضة (أيام/أسبوع)'), sportInp),
-      ),
+      el('label', { class: 'qform__field', style: 'max-width:260px' }, el('span', { class: 'qform__label' }, 'اسمك (يظهر في الترحيب)'), nameInp),
       el('div', { class: 'sep' }),
       el('div', { class: 'row gap wrap' },
         Cc.imageBtn('🧑‍🚀 تغيير الأفتار', (d) => { S.profile.avatar = d; }, { max: 300, quality: 0.85 }),
@@ -190,6 +182,9 @@
     const sprite = SM.pixel.planet(p.ptype || 'plain', { seed: seedOf(p.id), color: p.color });
     sprite.className = 'planet__px';
 
+    const S = SM.store.state;
+    const customColor = S.labelColors[p.id];
+
     return el('button', {
       class: 'planet' + (p.custom ? ' planet--custom' : ' planet--' + p.id),
       style: `left:${x}%;top:${y}%;--psize:${size}px;--pc:${p.color};z-index:${z};`,
@@ -197,12 +192,38 @@
       on: { click: () => SM.go('#/p/' + p.id) },
     },
       el('span', { class: 'planet__body' }, sprite),
-      el('span', { class: 'planet__label' },
-        el('span', { class: 'planet__name' + (p.rainbow ? ' rainbow-text' : '') }, p.name),
+      el('span', {
+        class: 'planet__label', role: 'button', title: 'اضغط لتغيير لون الاسم',
+        on: { click: (e) => { e.stopPropagation(); labelColorModal(p); } },
+      },
+        el('span', {
+          class: 'planet__name' + (p.rainbow && !customColor ? ' rainbow-text' : ''),
+          style: customColor ? `color:${customColor}` : '',
+        }, p.name),
         el('span', { class: 'planet__en' }, p.en || ''),
         weekly != null ? el('span', { class: 'planet__meter' }, el('i', { style: `width:${weekly}%;background:${p.color}` })) : null,
       ),
     );
+  }
+
+  /* منتقي لون اسم الكوكب */
+  const LABEL_COLORS = ['#ffffff', '#67e8f9', '#38bdf8', '#34d399', '#a3e635', '#fbbf24', '#fb923c', '#f87171', '#f472b6', '#a78bfa', '#e879f9', '#c19a6b'];
+  function labelColorModal(p) {
+    const Cc = SM.C, S = SM.store.state;
+    const cur = S.labelColors[p.id];
+    const m = Cc.modal(`🎨 لون اسم «${p.name}»`, el('div', {},
+      el('div', { class: 'swatches' },
+        LABEL_COLORS.map(c => el('button', {
+          class: 'swatch' + (cur === c ? ' on' : ''), style: `background:${c}`, title: c,
+          on: { click: () => { S.labelColors[p.id] = c; SM.store.save(); m.close(); SM.refresh(); } },
+        })),
+      ),
+      el('div', { class: 'sep' }),
+      el('button', {
+        class: 'btn',
+        on: { click: () => { delete S.labelColors[p.id]; SM.store.save(); m.close(); SM.refresh(); } },
+      }, '↺ اللون الافتراضي'),
+    ));
   }
 
   function sunNode() {
@@ -213,14 +234,10 @@
     sprite.className = 'sun__px';
     return el('div', { class: 'sun-wrap' },
       el('button', {
-        class: 'sun ' + cls, title: 'ضوء الشمس — مؤشر الإنتاجية',
+        class: 'sun ' + cls,
+        title: tier ? `ضوء الشمس — الإنتاجية: ${tier.label} ${prod.pct}%` : 'ضوء الشمس — مؤشر الإنتاجية',
         on: { click: sunModal },
       }, sprite),
-      el('div', { class: 'sun__label' },
-        el('span', { class: 'sun__title' }, 'ضوء الشمس'),
-        el('span', { class: 'sun__tier', style: tier ? `color:${tier.color}` : '' },
-          tier ? `الإنتاجية: ${tier.label} · ${prod.pct}%` : 'تتبّع عاداتك لتضيء الشمس'),
-      ),
     );
   }
 
@@ -269,7 +286,7 @@
       body.append(el('p', { class: 'hint' }, 'يتغذّى من متتبعات العادات داخل الكواكب'));
     }
     paint();
-    return el('section', { class: 'card glass side-card' },
+    return el('section', { class: 'card glass glass--sheen side-card' },
       el('div', { class: 'card__head' },
         el('h3', { class: 'card__title' }, '📊 مربع التقدّم'), tabs),
       el('div', { class: 'card__body' }, body),
@@ -282,7 +299,7 @@
     const rank = SM.calc.rank(total);
     const pending = S.goals.filter(g => !g.done);
     const nextPct = rank.next ? U.pct(total - rank.min, rank.next.min - rank.min) : 100;
-    return el('section', { class: 'card glass side-card xp-card', on: { click: goalsModal }, role: 'button', tabindex: '0' },
+    return el('section', { class: 'card glass glass--sheen side-card xp-card', on: { click: goalsModal }, role: 'button', tabindex: '0' },
       el('div', { class: 'card__head' },
         el('h3', { class: 'card__title' }, '⚡ مربع XP'),
         el('span', { class: 'chip', style: '--cc:#fbbf24' }, `${pending.length} هدف نشط`),
@@ -317,12 +334,12 @@
     const avatar = el('button', { class: 'avatar', title: 'الإعدادات', on: { click: settingsModal } },
       S.profile.avatar ? el('img', { src: S.profile.avatar, alt: 'avatar' }) : el('span', { class: 'avatar__ph' }, '🧑‍🚀'));
 
-    home.append(el('header', { class: 'topbar glass' },
+    home.append(el('header', { class: 'topbar glass glass--sheen' },
       el('div', { class: 'topbar__id' },
         avatar,
         el('div', { class: 'greet' },
-          el('div', { class: 'greet__hello' }, el('span', { dir: 'ltr', class: 'greet__en' }, `Hello ${S.profile.name}`), ' 👋'),
-          el('div', { class: 'greet__sub' }, `${U.timeGreeting()} · ${U.fmtDateLong(U.todayKey())}`),
+          el('div', { class: 'greet__hello' }, el('span', { dir: 'ltr', class: 'greet__en' }, S.profile.name)),
+          el('div', { class: 'greet__sub' }, U.fmtDateLong(U.todayKey())),
         ),
       ),
       el('div', { class: 'topbar__actions' },
@@ -343,15 +360,15 @@
       el('aside', { class: 'home-side' }, progressCard(), xpCard()),
       el('div', { class: 'solar-wrap' },
         el('button', { class: 'plusbtn', title: 'إنشاء كوكب جديد', on: { click: newPlanetModal } },
-          el('span', { class: 'plusbtn__plus' }, '+'),
           el('span', { class: 'plusbtn__hint' }, 'كوكب جديد'),
+          el('span', { class: 'plusbtn__plus' }, '+'),
         ),
         solar,
       ),
     ));
 
     /* شريط تنقل سفلي */
-    home.append(el('nav', { class: 'dock glass' },
+    home.append(el('nav', { class: 'dock glass glass--sheen' },
       SM.allPlanets().map(p => el('button', { class: 'dock__chip', on: { click: () => SM.go('#/p/' + p.id) } },
         el('span', { class: 'dot', style: `background:${p.color}` }), p.name)),
     ));

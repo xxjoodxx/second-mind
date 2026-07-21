@@ -10,6 +10,7 @@
     goals: [],           // {id,title,difficulty,done,createdAt,doneAt}
     habits: [],          // {id,name,planetId,area,createdAt,log:{'YYYY-MM-DD':true}}
     heroes: {},          // planetId -> dataURL
+    labelColors: {},     // planetId -> لون اسم الكوكب على الواجهة
     custom: [],          // كواكب مخصصة {id,name,color,createdAt,todos:[],notes:[]}
     health: {
       workouts: [],      // {id,date,type,duration,detail,note}
