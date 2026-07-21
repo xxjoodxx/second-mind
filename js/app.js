@@ -46,9 +46,19 @@
     return `rgba(${parseInt(h.slice(0, 2), 16)},${parseInt(h.slice(2, 4), 16)},${parseInt(h.slice(4, 6), 16)},${a})`;
   }
 
+  /* الخلفية الأساسية: صورة سديم هابل الحقيقية (حسب الطلب — "بالضبط")
+     وعند تعذّر تحميلها نرسم مشهدًا مولّدًا بالكانفس كخطة بديلة */
+  function initGalaxyBg() {
+    const old = document.getElementById('galaxy');
+    if (old) old.remove();
+    const img = el('img', { id: 'galaxy', src: 'assets/galaxy.jpg', alt: '', 'aria-hidden': 'true' });
+    img.addEventListener('error', () => { img.remove(); paintGalaxy(); });
+    document.body.prepend(img);
+  }
+
   function paintGalaxy() {
     let cv = document.getElementById('galaxy');
-    if (!cv) { cv = document.createElement('canvas'); cv.id = 'galaxy'; document.body.prepend(cv); }
+    if (!cv || cv.tagName !== 'CANVAS') { cv = document.createElement('canvas'); cv.id = 'galaxy'; document.body.prepend(cv); }
     const w = cv.width = Math.max(window.innerWidth, 800);
     const h = cv.height = Math.max(window.innerHeight, 600);
     const ctx = cv.getContext('2d');
@@ -142,12 +152,15 @@
   let resizeTimer = null;
   window.addEventListener('resize', () => {
     clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(() => { paintGalaxy(); }, 350);
+    resizeTimer = setTimeout(() => {
+      const g = document.getElementById('galaxy');
+      if (g && g.tagName === 'CANVAS') paintGalaxy(); /* الصورة تتمدد وحدها */
+    }, 350);
   });
 
   window.addEventListener('hashchange', SM.render);
   document.addEventListener('DOMContentLoaded', () => {
-    paintGalaxy();
+    initGalaxyBg();
     initStars();
     SM.render();
   });

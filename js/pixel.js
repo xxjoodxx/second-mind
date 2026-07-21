@@ -23,10 +23,10 @@
   const P = {};
 
   const SPECS = {
-    earth:  { base: ['#2f7fd0', '#2568b4'], land: ['#3fae62', '#2c8a4c'], ice: '#e8f4ff' },
+    earth:  { base: ['#2f7fd0', '#2568b4'], land: ['#3fae62', '#2c8a4c'] },
     swirl:  { base: ['#2f6fd8', '#2456b8'], streak: '#cfe4ff' },
     bands:  { bands: ['#f8e3a8', '#eab54e', '#c9853a', '#f3d287', '#d99b45', '#a96a2c', '#e8c06a'] },
-    crater: { base: ['#b97c4b', '#a4683c'], dark: '#7a4a28', rim: '#d9a06b' },
+    crater: { base: ['#c1552e', '#a84424'], dark: '#6e2a14', rim: '#e0855a' },
     ring:   { base: ['#c77df0', '#a855d8'], dark: '#8a3fc0', ring: ['#f87171', '#fbbf24', '#4ade80', '#38bdf8', '#a78bfa', '#f472b6'] },
   };
 
@@ -83,12 +83,12 @@
           const wob = rnd() < 0.22 ? 1 : 0;
           col = b[Math.abs(Math.floor((y / N) * b.length + wob)) % b.length];
         } else if (type === 'earth') {
+          /* بلا قطبين — أخضر وأزرق فقط حسب الطلب */
           col = spec.base[(x + y) % 2 === 0 ? 0 : 1];
           for (const bl of blobs) {
             const bdx = x - bl.x, bdy = y - bl.y;
             if (bdx * bdx + bdy * bdy < bl.r * bl.r) { col = spec.land[(x * 3 + y) % 2 === 0 ? 0 : 1]; break; }
           }
-          if (y < N * 0.16 || y > N * 0.84) col = spec.ice;
         } else if (type === 'swirl') {
           col = spec.base[y % 5 === 0 ? 1 : 0];
           const wave = Math.sin(y * 0.9 + seed) * 2.2;

@@ -39,7 +39,7 @@
     const close = () => { wrap.classList.remove('open'); setTimeout(() => wrap.remove(), 220); document.removeEventListener('keydown', onKey); };
     const onKey = (e) => { if (e.key === 'Escape') close(); };
     const wrap = el('div', { class: 'modal-wrap', on: { click: (e) => { if (e.target === wrap) close(); } } },
-      el('div', { class: 'modal glass' + (opts.wide ? ' modal--wide' : '') },
+      el('div', { class: 'modal glass glass--sheen' + (opts.wide ? ' modal--wide' : '') },
         el('div', { class: 'modal__head' },
           el('div', { class: 'modal__title' }, title),
           el('button', { class: 'iconbtn', title: 'إغلاق', on: { click: close } }, '✕'),
