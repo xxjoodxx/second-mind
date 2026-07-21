@@ -22,7 +22,7 @@
   SM.PLANETS = [
     {
       id: 'health', name: 'الصحة', en: 'HEALTH', color: '#34d399',
-      orbit: 0, angle: 156, size: 74, defaultAreas: ['health', 'mental'],
+      orbit: 0, angle: 118, size: 122, ptype: 'earth', defaultAreas: ['health', 'mental'],
       sections: [
         { id: 'dash',  name: 'اللوحة العامة',    icon: '🛰️' },
         { id: 'sport', name: 'الرياضة',          icon: '🏃‍♀️' },
@@ -32,8 +32,8 @@
       ],
     },
     {
-      id: 'learning', name: 'التعلم الذاتي', en: 'LEARNING', color: '#38bdf8',
-      orbit: 1, angle: 244, size: 84, defaultAreas: ['learning', 'skills'],
+      id: 'learning', name: 'التعلم الذاتي والمهارات', en: 'LEARNING & SKILLS', color: '#38bdf8',
+      orbit: 1, angle: 250, size: 132, ptype: 'swirl', defaultAreas: ['learning', 'skills'],
       sections: [
         { id: 'dash',      name: 'اللوحة العامة',       icon: '🛰️' },
         { id: 'courses',   name: 'كورسات',              icon: '🎓' },
@@ -44,7 +44,7 @@
     },
     {
       id: 'finance', name: 'المالية', en: 'FINANCE', color: '#fbbf24',
-      orbit: 1, angle: 42, size: 92, defaultAreas: ['money'],
+      orbit: 2, angle: 210, size: 150, ptype: 'bands', defaultAreas: ['money'],
       sections: [
         { id: 'dash',     name: 'اللوحة العامة',  icon: '🛰️' },
         { id: 'income',   name: 'مصادر الدخل',    icon: '💰' },
@@ -55,8 +55,8 @@
       ],
     },
     {
-      id: 'hobbies', name: 'الهوايات', en: 'HOBBIES', color: '#e879f9', rainbow: true, ring: true,
-      orbit: 2, angle: 200, size: 84, defaultAreas: ['skills'],
+      id: 'hobbies', name: 'الهوايات', en: 'HOBBIES', color: '#e879f9', rainbow: true,
+      orbit: 1, angle: 318, size: 150, ptype: 'ring', defaultAreas: ['skills'],
       sections: [
         { id: 'dash',     name: 'اللوحة العامة',    icon: '🛰️' },
         { id: 'mylist',   name: 'هواياتي',          icon: '🎨' },
@@ -67,7 +67,7 @@
     },
     {
       id: 'study', name: 'الدراسة', en: 'STUDY', color: '#c19a6b',
-      orbit: 2, angle: 335, size: 70, defaultAreas: ['study'],
+      orbit: 0, angle: 40, size: 108, ptype: 'crater', defaultAreas: ['study'],
       sections: [
         { id: 'dash',     name: 'اللوحة العامة',        icon: '🛰️' },
         { id: 'subjects', name: 'المواد',               icon: '📘' },
@@ -100,7 +100,7 @@
     if (!c) return null;
     return {
       id: c.id, name: c.name, en: 'NEW WORLD', color: c.color, custom: true,
-      orbit: 2, size: 62, sections: SM.CUSTOM_SECTIONS, defaultAreas: SM.AREAS.map(a => a.id),
+      orbit: 2, size: 96, ptype: 'plain', sections: SM.CUSTOM_SECTIONS, defaultAreas: SM.AREAS.map(a => a.id),
     };
   };
 

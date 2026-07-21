@@ -2,7 +2,14 @@
 (function () {
   const U = SM.U, el = SM.el, C = () => SM.C;
 
-  const ORBIT_R = [23.5, 35, 46.5]; // نصف قطر المدارات كنسبة من الحاوية
+  const ORBIT_R = [30, 40, 46]; // نصف قطر المدارات كنسبة مئوية (الإهليلج يأتي من نسبة عرض/ارتفاع الحاوية)
+  const CUSTOM_ANGLES = [16, 164, 100, 210, 330, 68, 292]; // توزيع الكواكب الجديدة حول المدار الخارجي
+
+  function seedOf(id) {
+    let h = 0;
+    for (const ch of String(id)) h = (h * 31 + ch.charCodeAt(0)) | 0;
+    return (Math.abs(h) % 100000) + 3;
+  }
 
   /* ---------- لوحة الأهداف و XP ---------- */
   function goalsModal() {
@@ -168,24 +175,28 @@
     let angle = p.angle;
     if (p.custom) {
       const idx = SM.store.state.custom.findIndex(c => c.id === p.id);
-      angle = (78 + idx * 52) % 360;
+      angle = CUSTOM_ANGLES[idx % CUSTOM_ANGLES.length] + Math.floor(idx / CUSTOM_ANGLES.length) * 24;
     }
     const rad = (angle * Math.PI) / 180;
+    /* نفس النسبة للمحورين — الحاوية العريضة تحوّل المسار لإهليلج منظوري تلقائيًا */
     const x = 50 + r * Math.cos(rad);
     const y = 50 + r * Math.sin(rad);
-    const size = p.size || 62;
+
+    /* عمق المشهد: الكواكب الأمامية (أسفل) أكبر وأقرب، الخلفية أصغر وخلف الشمس */
+    const depth = Math.sin(rad);
+    const size = Math.round((p.size || 96) * (1 + 0.15 * depth));
+    const z = depth >= 0 ? 8 : 3;
+
+    const sprite = SM.pixel.planet(p.ptype || 'plain', { seed: seedOf(p.id), color: p.color });
+    sprite.className = 'planet__px';
 
     return el('button', {
       class: 'planet' + (p.custom ? ' planet--custom' : ' planet--' + p.id),
-      style: `left:${x}%;top:${y}%;--psize:${size}px;${p.custom ? `--pc:${p.color};` : ''}`,
+      style: `left:${x}%;top:${y}%;--psize:${size}px;--pc:${p.color};z-index:${z};`,
       title: p.name,
       on: { click: () => SM.go('#/p/' + p.id) },
     },
-      el('span', { class: 'planet__body' },
-        p.ring ? el('i', { class: 'planet__ring' }) : null,
-        el('i', { class: 'planet__texture' }),
-        el('i', { class: 'planet__shine' }),
-      ),
+      el('span', { class: 'planet__body' }, sprite),
       el('span', { class: 'planet__label' },
         el('span', { class: 'planet__name' + (p.rainbow ? ' rainbow-text' : '') }, p.name),
         el('span', { class: 'planet__en' }, p.en || ''),
@@ -198,14 +209,13 @@
     const prod = SM.calc.productivity();
     const tier = prod.tier;
     const cls = tier ? 'sun--' + tier.id : 'sun--idle';
+    const sprite = SM.pixel.sun(tier ? tier.id : 'idle');
+    sprite.className = 'sun__px';
     return el('div', { class: 'sun-wrap' },
       el('button', {
         class: 'sun ' + cls, title: 'ضوء الشمس — مؤشر الإنتاجية',
         on: { click: sunModal },
-      },
-        el('i', { class: 'sun__corona' }),
-        el('i', { class: 'sun__core' }),
-      ),
+      }, sprite),
       el('div', { class: 'sun__label' },
         el('span', { class: 'sun__title' }, 'ضوء الشمس'),
         el('span', { class: 'sun__tier', style: tier ? `color:${tier.color}` : '' },
