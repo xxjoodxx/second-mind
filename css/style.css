@@ -297,8 +297,10 @@ textarea.inp { resize: vertical; line-height: 1.7; }
 .avatar img { width: 100%; height: 100%; object-fit: cover; }
 .avatar__ph { font-size: 36px; }
 
-.greet__hello { font-size: 27px; font-weight: 900; display: flex; align-items: center; gap: 7px; }
-.greet__en { font-family: var(--font-en); background: linear-gradient(90deg, #67e8f9, #a78bfa, #fbbf24); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.greet__hello { font-size: 27px; font-weight: 900; display: flex; align-items: center; gap: 7px; cursor: pointer; border-radius: 10px; padding: 2px 6px; transition: background .2s; }
+.greet__hello:hover { background: rgba(255, 255, 255, .08); }
+.greet__en { font-family: var(--font-en); }
+.greet__en--grad { background: linear-gradient(90deg, #67e8f9, #a78bfa, #fbbf24); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; }
 .greet__sub { font-size: 11.5px; color: var(--faint); margin-top: 2px; }
 
 .xpchip {
@@ -317,11 +319,12 @@ textarea.inp { resize: vertical; line-height: 1.7; }
 .home--hero::before { content: ''; position: fixed; inset: 0; background: rgba(4, 6, 16, .72); pointer-events: none; }
 .home--hero > * { position: relative; }
 
-.home-grid {
-  display: grid; grid-template-columns: 330px minmax(0, 1fr);
-  gap: 16px; padding: 8px 18px; align-items: start;
+/* المشهد يمتد بعرض الصفحة كاملاً، واللوحتان تطفوان على الجانب فوقه */
+.home-grid { position: relative; padding: 8px 18px; }
+.home-side {
+  position: absolute; top: 6px; inset-inline-start: 24px; z-index: 25;
+  width: 300px; display: flex; flex-direction: column; gap: 14px;
 }
-.home-side { display: flex; flex-direction: column; gap: 14px; position: sticky; top: 14px; }
 .side-card { padding: 16px 18px; margin: 0; }
 
 .tabs { display: flex; gap: 4px; background: rgba(255, 255, 255, .05); border-radius: 99px; padding: 3px; }
@@ -337,7 +340,7 @@ textarea.inp { resize: vertical; line-height: 1.7; }
 .xp-legend .dot { width: 8px; height: 8px; }
 
 /* ============ المجموعة الشمسية ============ */
-.solar-wrap { position: relative; min-height: 660px; display: flex; align-items: center; justify-content: center; }
+.solar-wrap { position: relative; min-height: 720px; display: flex; align-items: center; justify-content: center; }
 
 .plusbtn {
   position: absolute; top: 2px; inset-inline-start: 50%; transform: translateX(50%);
@@ -358,7 +361,7 @@ textarea.inp { resize: vertical; line-height: 1.7; }
 .plusbtn__hint { font-size: 11px; color: rgba(103, 232, 249, .8); font-weight: 700; }
 
 /* حاوية عريضة → المسارات الدائرية بالنِّسَب تتحول لإهليلجات منظورية مثل صور المجموعة الشمسية */
-.solar { position: relative; width: min(100%, 1000px); aspect-ratio: 1.6; margin: 0 auto; }
+.solar { position: relative; width: min(100%, 1180px); aspect-ratio: 1.7; margin: 0 auto; }
 
 .orbit {
   position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
@@ -371,7 +374,7 @@ textarea.inp { resize: vertical; line-height: 1.7; }
 
 /* الشمس البكسلية */
 .sun-wrap { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 8px; z-index: 5; }
-.sun { position: relative; width: 175px; height: 175px; border-radius: 50%; transition: transform .3s; animation: sunpulse 4.5s ease-in-out infinite; }
+.sun { position: relative; width: 235px; height: 235px; border-radius: 50%; transition: transform .3s; animation: sunpulse 4.5s ease-in-out infinite; }
 .sun:hover { transform: scale(1.06); }
 .sun__px { position: relative; z-index: 1; width: 100%; height: 100%; display: block; image-rendering: pixelated; }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -475,6 +478,12 @@ textarea.inp { resize: vertical; line-height: 1.7; }
 .swatch { width: 30px; height: 30px; border-radius: 50%; border: 2px solid transparent; transition: all .2s; }
 .swatch:hover { transform: scale(1.15); }
 .swatch.on { border-color: #fff; box-shadow: 0 0 12px rgba(255, 255, 255, .4); transform: scale(1.12); }
+
+/* عجلة الألوان */
+.cwheel-wrap { display: flex; justify-content: center; }
+.cwheel { border-radius: 50%; cursor: crosshair; box-shadow: 0 8px 30px rgba(0, 0, 0, .45); transition: transform .15s; }
+.cwheel:active { transform: scale(.99); }
+.cwheel-preview { width: 30px; height: 30px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, .6); flex: none; box-shadow: 0 0 10px rgba(0, 0, 0, .4); }
 
 .sunscale { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
 .sunscale__item {
@@ -736,12 +745,12 @@ textarea.inp { resize: vertical; line-height: 1.7; }
 
 /* ============ استجابة الشاشات ============ */
 @media (max-width: 1080px) {
-  .home-grid { grid-template-columns: minmax(0, 1fr); }
-  .home-side { position: static; order: 2; }
+  .home-grid { display: flex; flex-direction: column; }
+  .home-side { position: static; inset-inline-end: auto; width: 100%; order: 2; }
   .solar-wrap { order: 1; min-height: auto; padding: 55px 0 20px; }
   .solar { width: min(96vw, 720px); aspect-ratio: 1.45; }
   .planet__body { width: calc(var(--psize) * .72); height: calc(var(--psize) * .72); }
-  .sun { width: 130px; height: 130px; }
+  .sun { width: 150px; height: 150px; }
 
   .pp__layout { grid-template-columns: minmax(0, 1fr); }
   .pp__side { position: static; flex-direction: column; }
@@ -759,7 +768,7 @@ textarea.inp { resize: vertical; line-height: 1.7; }
   .avatar__ph { font-size: 27px; }
   .home-grid { padding: 4px 10px; }
   .solar { aspect-ratio: 1.2; }
-  .sun { width: 92px; height: 92px; }
+  .sun { width: 112px; height: 112px; }
   .planet__body { width: calc(var(--psize) * .48); height: calc(var(--psize) * .48); }
   .planet__name { font-size: 11px; }
   .planet__en { display: none; }

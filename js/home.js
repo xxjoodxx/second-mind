@@ -95,6 +95,16 @@
     const Cc = SM.C, S = SM.store.state;
     const nameInp = el('input', { class: 'inp inp--short', value: S.profile.name, on: { change: (e) => { S.profile.name = e.target.value.trim() || 'Joud'; SM.store.save(); SM.refresh(); } } });
 
+    const fontArSel = el('select', {
+      class: 'inp', style: `font-family:'${S.settings.fontAr}',sans-serif`,
+      on: { change: (e) => { S.settings.fontAr = e.target.value; SM.store.save(); SM.applyFonts(); fontArSel.style.fontFamily = `'${e.target.value}',sans-serif`; } },
+    }, SM.FONTS.ar.map(f => el('option', { value: f, selected: S.settings.fontAr === f, style: `font-family:'${f}',sans-serif` }, f)));
+
+    const fontEnSel = el('select', {
+      class: 'inp', style: `font-family:'${S.settings.fontEn}',monospace`,
+      on: { change: (e) => { S.settings.fontEn = e.target.value; SM.store.save(); SM.applyFonts(); fontEnSel.style.fontFamily = `'${e.target.value}',monospace`; } },
+    }, SM.FONTS.en.map(f => el('option', { value: f, selected: S.settings.fontEn === f, style: `font-family:'${f}',monospace` }, f)));
+
     const importBtn = el('button', {
       class: 'btn',
       on: {
@@ -118,6 +128,12 @@
 
     Cc.modal('⚙️ الإعدادات', el('div', { class: 'settings' },
       el('label', { class: 'qform__field', style: 'max-width:260px' }, el('span', { class: 'qform__label' }, 'اسمك (يظهر في الترحيب)'), nameInp),
+      el('div', { class: 'sep' }),
+      el('div', { class: 'qform__label', style: 'margin-bottom:8px' }, '🔤 خطوط النصوص'),
+      el('div', { class: 'row gap wrap' },
+        el('label', { class: 'qform__field' }, el('span', { class: 'qform__label' }, 'الخط العربي'), fontArSel),
+        el('label', { class: 'qform__field' }, el('span', { class: 'qform__label' }, 'الخط الإنجليزي والأرقام'), fontEnSel),
+      ),
       el('div', { class: 'sep' }),
       el('div', { class: 'row gap wrap' },
         Cc.imageBtn('🧑‍🚀 تغيير الأفتار', (d) => { S.profile.avatar = d; }, { max: 300, quality: 0.85 }),
@@ -179,50 +195,87 @@
     const size = Math.round((p.size || 96) * (1 + 0.15 * depth));
     const z = depth >= 0 ? 8 : 3;
 
-    const sprite = SM.pixel.planet(p.ptype || 'plain', { seed: seedOf(p.id), color: p.color });
+    const S = SM.store.state;
+    const bodyColor = S.planetColors[p.id]; // لون جسم الكوكب المختار (إن وُجد)
+    /* الكواكب الأساسية: نزيح درجة اللون؛ المخصصة: نمرر اللون مباشرة */
+    let spriteOpts = { seed: seedOf(p.id), color: bodyColor || p.color };
+    if (bodyColor && !p.custom) spriteOpts.hueShift = SM.pixel.hueOf(bodyColor) - SM.pixel.hueOf(p.color);
+    const sprite = SM.pixel.planet(p.ptype || 'plain', spriteOpts);
     sprite.className = 'planet__px';
 
-    const S = SM.store.state;
-    const customColor = S.labelColors[p.id];
+    const glowColor = bodyColor || p.color;
+    const labelColor = S.labelColors[p.id];
 
     return el('button', {
       class: 'planet' + (p.custom ? ' planet--custom' : ' planet--' + p.id),
-      style: `left:${x}%;top:${y}%;--psize:${size}px;--pc:${p.color};z-index:${z};`,
+      style: `left:${x}%;top:${y}%;--psize:${size}px;--pc:${glowColor};z-index:${z};`,
       title: p.name,
       on: { click: () => SM.go('#/p/' + p.id) },
     },
       el('span', { class: 'planet__body' }, sprite),
       el('span', {
-        class: 'planet__label', role: 'button', title: 'اضغط لتغيير لون الاسم',
-        on: { click: (e) => { e.stopPropagation(); labelColorModal(p); } },
+        class: 'planet__label', role: 'button', title: 'اضغط لتغيير الألوان',
+        on: { click: (e) => { e.stopPropagation(); planetColorModal(p); } },
       },
         el('span', {
-          class: 'planet__name' + (p.rainbow && !customColor ? ' rainbow-text' : ''),
-          style: customColor ? `color:${customColor}` : '',
+          class: 'planet__name' + (p.rainbow && !labelColor ? ' rainbow-text' : ''),
+          style: labelColor ? `color:${labelColor}` : '',
         }, p.name),
         el('span', { class: 'planet__en' }, p.en || ''),
-        weekly != null ? el('span', { class: 'planet__meter' }, el('i', { style: `width:${weekly}%;background:${p.color}` })) : null,
+        weekly != null ? el('span', { class: 'planet__meter' }, el('i', { style: `width:${weekly}%;background:${glowColor}` })) : null,
       ),
     );
   }
 
-  /* منتقي لون اسم الكوكب */
-  const LABEL_COLORS = ['#ffffff', '#67e8f9', '#38bdf8', '#34d399', '#a3e635', '#fbbf24', '#fb923c', '#f87171', '#f472b6', '#a78bfa', '#e879f9', '#c19a6b'];
-  function labelColorModal(p) {
+  /* منتقي ألوان بعجلة لونية — للاسم أو لجسم الكوكب */
+  function planetColorModal(p) {
     const Cc = SM.C, S = SM.store.state;
-    const cur = S.labelColors[p.id];
-    const m = Cc.modal(`🎨 لون اسم «${p.name}»`, el('div', {},
-      el('div', { class: 'swatches' },
-        LABEL_COLORS.map(c => el('button', {
-          class: 'swatch' + (cur === c ? ' on' : ''), style: `background:${c}`, title: c,
-          on: { click: () => { S.labelColors[p.id] = c; SM.store.save(); m.close(); SM.refresh(); } },
-        })),
+    let mode = 'body'; // body | label
+    const body = el('div', {});
+    const tabs = el('div', { class: 'tabs', style: 'margin-bottom:14px' });
+
+    function setColor(hex) {
+      if (mode === 'label') S.labelColors[p.id] = hex;
+      else if (p.custom) { const cp = S.custom.find(c => c.id === p.id); if (cp) cp.color = hex; }
+      else S.planetColors[p.id] = hex;
+      SM.store.save(); SM.refresh(); paint();
+    }
+    function reset() {
+      if (mode === 'label') delete S.labelColors[p.id];
+      else if (!p.custom) delete S.planetColors[p.id];
+      SM.store.save(); SM.refresh(); paint();
+    }
+    function paint() {
+      tabs.innerHTML = '';
+      [['body', '🪐 لون الكوكب'], ['label', '🔤 لون الاسم']].forEach(([id, lb]) => {
+        tabs.append(el('button', { class: 'tab' + (mode === id ? ' on' : ''), on: { click: () => { mode = id; paint(); } } }, lb));
+      });
+      const cur = mode === 'label' ? S.labelColors[p.id] : (p.custom ? p.color : S.planetColors[p.id]);
+      body.innerHTML = '';
+      body.append(
+        el('div', { class: 'cwheel-wrap' }, Cc.colorWheel(setColor, { size: 220 })),
+        el('div', { class: 'row gap center-v center', style: 'margin-top:12px' },
+          el('span', { class: 'cwheel-preview', style: `background:${cur || '#334155'}` }),
+          el('span', { class: 'hint' }, cur ? cur : 'اللون الافتراضي'),
+          el('button', { class: 'btn btn--sm', on: { click: reset } }, '↺ افتراضي'),
+        ),
+        el('p', { class: 'hint center' }, 'اختر أي درجة من العجلة'),
+      );
+    }
+    paint();
+    Cc.modal(`🎨 ألوان «${p.name}»`, el('div', {}, tabs, body));
+  }
+
+  /* عجلة لون اسم «Joud» في الشريط العلوي */
+  function nameColorModal() {
+    const Cc = SM.C, S = SM.store.state;
+    const cur = S.profile.nameColor;
+    Cc.modal('🎨 لون الاسم', el('div', {},
+      el('div', { class: 'cwheel-wrap' }, Cc.colorWheel((hex) => { S.profile.nameColor = hex; SM.store.save(); SM.refresh(); }, { size: 220 })),
+      el('div', { class: 'row gap center-v center', style: 'margin-top:12px' },
+        el('span', { class: 'cwheel-preview', style: `background:${cur || '#67e8f9'}` }),
+        el('button', { class: 'btn btn--sm', on: { click: () => { S.profile.nameColor = null; SM.store.save(); SM.refresh(); } } }, '↺ افتراضي'),
       ),
-      el('div', { class: 'sep' }),
-      el('button', {
-        class: 'btn',
-        on: { click: () => { delete S.labelColors[p.id]; SM.store.save(); m.close(); SM.refresh(); } },
-      }, '↺ اللون الافتراضي'),
     ));
   }
 
@@ -338,7 +391,10 @@
       el('div', { class: 'topbar__id' },
         avatar,
         el('div', { class: 'greet' },
-          el('div', { class: 'greet__hello' }, el('span', { dir: 'ltr', class: 'greet__en' }, S.profile.name)),
+          el('button', {
+            class: 'greet__hello', title: 'اضغط لتغيير لون الاسم',
+            on: { click: nameColorModal },
+          }, el('span', { dir: 'ltr', class: 'greet__en' + (S.profile.nameColor ? '' : ' greet__en--grad'), style: S.profile.nameColor ? `color:${S.profile.nameColor};-webkit-text-fill-color:${S.profile.nameColor}` : '' }, S.profile.name)),
           el('div', { class: 'greet__sub' }, U.fmtDateLong(U.todayKey())),
         ),
       ),
@@ -356,8 +412,8 @@
       SM.allPlanets().map(planetNode),
     );
 
+    /* المشهد يمتد بعرض الصفحة، واللوحتان تطفوان على الجانب */
     home.append(el('div', { class: 'home-grid' },
-      el('aside', { class: 'home-side' }, progressCard(), xpCard()),
       el('div', { class: 'solar-wrap' },
         el('button', { class: 'plusbtn', title: 'إنشاء كوكب جديد', on: { click: newPlanetModal } },
           el('span', { class: 'plusbtn__hint' }, 'كوكب جديد'),
@@ -365,6 +421,7 @@
         ),
         solar,
       ),
+      el('aside', { class: 'home-side' }, progressCard(), xpCard()),
     ));
 
     /* شريط تنقل سفلي */
@@ -372,8 +429,6 @@
       SM.allPlanets().map(p => el('button', { class: 'dock__chip', on: { click: () => SM.go('#/p/' + p.id) } },
         el('span', { class: 'dot', style: `background:${p.color}` }), p.name)),
     ));
-
-    home.append(el('footer', { class: 'home-quote' }, `« ${U.dailyQuote()} »`));
 
     root.append(home);
   };

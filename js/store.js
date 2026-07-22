@@ -5,12 +5,13 @@
 
   const DEFAULTS = {
     version: 1,
-    profile: { name: 'Joud', avatar: null, homeHero: null },
-    settings: { currency: 'ر.س', waterGoal: 8, sportWeeklyGoal: 4 },
+    profile: { name: 'Joud', avatar: null, homeHero: null, nameColor: null },
+    settings: { currency: 'ر.س', waterGoal: 8, sportWeeklyGoal: 4, fontAr: 'Cairo', fontEn: 'Space Grotesk' },
     goals: [],           // {id,title,difficulty,done,createdAt,doneAt}
     habits: [],          // {id,name,planetId,area,createdAt,log:{'YYYY-MM-DD':true}}
     heroes: {},          // planetId -> dataURL
     labelColors: {},     // planetId -> لون اسم الكوكب على الواجهة
+    planetColors: {},    // planetId -> لون جسم الكوكب (إزاحة درجة اللون)
     custom: [],          // كواكب مخصصة {id,name,color,createdAt,todos:[],notes:[]}
     health: {
       workouts: [],      // {id,date,type,duration,detail,note}

@@ -3,6 +3,49 @@
   const U = SM.U, el = SM.el;
   const C = {};
 
+  /* ---------- عجلة الألوان ---------- */
+  C.colorWheel = function (onPick, opts = {}) {
+    const size = opts.size || 210;
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const cv = el('canvas', { class: 'cwheel', width: size * dpr, height: size * dpr, style: `width:${size}px;height:${size}px` });
+    const ctx = cv.getContext('2d');
+    const R = size * dpr / 2, inner = R * 0.30;
+    // رسم العجلة: الزاوية = درجة اللون، نصف القطر = التشبّع، ومركز فاتح
+    const img = ctx.createImageData(size * dpr, size * dpr);
+    for (let y = 0; y < size * dpr; y++) {
+      for (let x = 0; x < size * dpr; x++) {
+        const dx = x - R, dy = y - R;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const i = (y * size * dpr + x) * 4;
+        if (dist > R) { img.data[i + 3] = 0; continue; }
+        let hue = Math.atan2(dy, dx) * 180 / Math.PI + 90;
+        hue = ((hue % 360) + 360) % 360;
+        const sat = Math.min(1, dist / R);
+        const light = 0.96 - sat * 0.46; // مركز فاتح → حواف داكنة
+        const [r, g, b] = hsl(hue, dist < inner ? sat * (dist / inner) : Math.min(1, 0.55 + sat * 0.45), light);
+        img.data[i] = r; img.data[i + 1] = g; img.data[i + 2] = b; img.data[i + 3] = 255;
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+    cv.addEventListener('click', (e) => {
+      const rect = cv.getBoundingClientRect();
+      const px = Math.round((e.clientX - rect.left) / rect.width * size * dpr);
+      const py = Math.round((e.clientY - rect.top) / rect.height * size * dpr);
+      const d = ctx.getImageData(px, py, 1, 1).data;
+      if (d[3] < 10) return;
+      onPick('#' + [d[0], d[1], d[2]].map(v => v.toString(16).padStart(2, '0')).join(''));
+    });
+    return cv;
+  };
+  function hsl(h, s, l) {
+    const c = (1 - Math.abs(2 * l - 1)) * s, x = c * (1 - Math.abs((h / 60) % 2 - 1)), m = l - c / 2;
+    let r = 0, g = 0, b = 0;
+    if (h < 60) [r, g, b] = [c, x, 0]; else if (h < 120) [r, g, b] = [x, c, 0];
+    else if (h < 180) [r, g, b] = [0, c, x]; else if (h < 240) [r, g, b] = [0, x, c];
+    else if (h < 300) [r, g, b] = [x, 0, c]; else[r, g, b] = [c, 0, x];
+    return [Math.round((r + m) * 255), Math.round((g + m) * 255), Math.round((b + m) * 255)];
+  }
+
   /* ---------- تنبيهات ---------- */
   C.toast = function (msg) {
     const root = document.getElementById('toasts');
