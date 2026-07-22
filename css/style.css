@@ -316,7 +316,8 @@ textarea.inp { resize: vertical; line-height: 1.7; }
 /* ============ الشبكة الرئيسية ============ */
 .home { min-height: 100vh; padding-bottom: 90px; }
 .home--hero { background-size: cover; background-position: center; background-attachment: fixed; position: relative; }
-.home--hero::before { content: ''; position: fixed; inset: 0; background: rgba(4, 6, 16, .72); pointer-events: none; }
+.home--hero::before { content: ''; position: fixed; inset: 0; background: rgba(4, 6, 16, .12); pointer-events: none; } /* «زيّ ما هي» — طبقة خفيفة جدًا */
+.home--hero-dim::before { background: rgba(4, 6, 16, .72); } /* «معتمة» */
 .home--hero > * { position: relative; }
 
 /* المشهد يمتد بعرض الصفحة كاملاً، واللوحتان تطفوان على الجانب فوقه */
@@ -346,19 +347,28 @@ textarea.inp { resize: vertical; line-height: 1.7; }
   position: absolute; top: 2px; inset-inline-start: 50%; transform: translateX(50%);
   z-index: 20; display: flex; flex-direction: column; align-items: center; gap: 6px;
 }
+/* زر الكوكب الجديد: زجاج شفاف مائي بلمعة قطرية (مثل الكبسولة المرجعية) */
 .plusbtn__plus {
-  width: 52px; height: 52px; border-radius: 50%;
+  position: relative; overflow: hidden;
+  width: 58px; height: 58px; border-radius: 50%;
   display: grid; place-items: center;
-  font-size: 27px; font-weight: 400; line-height: 1; color: var(--aqua);
+  font-size: 29px; font-weight: 400; line-height: 1;
+  color: rgba(255, 255, 255, .92); text-shadow: 0 1px 4px rgba(0, 0, 0, .5);
   padding: 0; padding-bottom: 3px; box-sizing: border-box;
-  background: rgba(103, 232, 249, .1);
-  border: 1.5px solid rgba(103, 232, 249, .5);
-  backdrop-filter: blur(8px);
-  box-shadow: 0 0 22px rgba(103, 232, 249, .25), inset 0 0 14px rgba(103, 232, 249, .1);
+  background: linear-gradient(160deg, rgba(255, 255, 255, .22), rgba(20, 26, 44, .30) 55%, rgba(4, 6, 14, .34));
+  border: 1px solid rgba(255, 255, 255, .5);
+  border-bottom-color: rgba(255, 255, 255, .25);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .4), inset 0 2px 6px rgba(255, 255, 255, .35), inset 0 -6px 12px rgba(0, 0, 0, .3);
   transition: all .25s;
 }
-.plusbtn:hover .plusbtn__plus { transform: scale(1.12) rotate(90deg); box-shadow: 0 0 34px rgba(103, 232, 249, .5); }
-.plusbtn__hint { font-size: 11px; color: rgba(103, 232, 249, .8); font-weight: 700; }
+.plusbtn__plus::before { /* لمعة زجاجية قطرية */
+  content: ''; position: absolute; inset: 0; border-radius: 50%; pointer-events: none;
+  background: linear-gradient(125deg, rgba(255, 255, 255, .55) 0%, rgba(255, 255, 255, .12) 32%, transparent 48%, transparent 70%, rgba(255, 255, 255, .10) 100%);
+}
+.plusbtn:hover .plusbtn__plus { transform: scale(1.12); box-shadow: 0 10px 30px rgba(0, 0, 0, .45), inset 0 2px 8px rgba(255, 255, 255, .5), inset 0 -6px 12px rgba(0, 0, 0, .3); }
+.plusbtn__hint { font-size: 11px; color: rgba(255, 255, 255, .85); font-weight: 700; text-shadow: 0 1px 6px rgba(0, 0, 0, .9); }
 
 /* حاوية عريضة → المسارات الدائرية بالنِّسَب تتحول لإهليلجات منظورية مثل صور المجموعة الشمسية */
 .solar { position: relative; width: min(100%, 1180px); aspect-ratio: 1.7; margin: 0 auto; }
@@ -374,7 +384,7 @@ textarea.inp { resize: vertical; line-height: 1.7; }
 
 /* الشمس البكسلية */
 .sun-wrap { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 8px; z-index: 5; }
-.sun { position: relative; width: 235px; height: 235px; border-radius: 50%; transition: transform .3s; animation: sunpulse 4.5s ease-in-out infinite; }
+.sun { position: relative; width: 320px; height: 320px; border-radius: 50%; transition: transform .3s; animation: sunpulse 4.5s ease-in-out infinite; }
 .sun:hover { transform: scale(1.06); }
 .sun__px { position: relative; z-index: 1; width: 100%; height: 100%; display: block; image-rendering: pixelated; }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -479,10 +489,16 @@ textarea.inp { resize: vertical; line-height: 1.7; }
 .swatch:hover { transform: scale(1.15); }
 .swatch.on { border-color: #fff; box-shadow: 0 0 12px rgba(255, 255, 255, .4); transform: scale(1.12); }
 
-/* عجلة الألوان */
+/* عجلة الألوان مع مؤشر متحرك */
 .cwheel-wrap { display: flex; justify-content: center; }
-.cwheel { border-radius: 50%; cursor: crosshair; box-shadow: 0 8px 30px rgba(0, 0, 0, .45); transition: transform .15s; }
-.cwheel:active { transform: scale(.99); }
+.cwheel-box { position: relative; touch-action: none; }
+.cwheel { display: block; border-radius: 50%; cursor: crosshair; box-shadow: 0 8px 30px rgba(0, 0, 0, .45); }
+.cwheel-handle {
+  position: absolute; width: 22px; height: 22px; border-radius: 50%;
+  transform: translate(-50%, -50%); pointer-events: none;
+  border: 3px solid #fff; box-shadow: 0 0 0 1.5px rgba(0, 0, 0, .5), 0 2px 8px rgba(0, 0, 0, .55);
+  background: transparent;
+}
 .cwheel-preview { width: 30px; height: 30px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, .6); flex: none; box-shadow: 0 0 10px rgba(0, 0, 0, .4); }
 
 .sunscale { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
@@ -750,7 +766,7 @@ textarea.inp { resize: vertical; line-height: 1.7; }
   .solar-wrap { order: 1; min-height: auto; padding: 55px 0 20px; }
   .solar { width: min(96vw, 720px); aspect-ratio: 1.45; }
   .planet__body { width: calc(var(--psize) * .72); height: calc(var(--psize) * .72); }
-  .sun { width: 150px; height: 150px; }
+  .sun { width: 200px; height: 200px; }
 
   .pp__layout { grid-template-columns: minmax(0, 1fr); }
   .pp__side { position: static; flex-direction: column; }
@@ -768,7 +784,7 @@ textarea.inp { resize: vertical; line-height: 1.7; }
   .avatar__ph { font-size: 27px; }
   .home-grid { padding: 4px 10px; }
   .solar { aspect-ratio: 1.2; }
-  .sun { width: 112px; height: 112px; }
+  .sun { width: 150px; height: 150px; }
   .planet__body { width: calc(var(--psize) * .48); height: calc(var(--psize) * .48); }
   .planet__name { font-size: 11px; }
   .planet__en { display: none; }
