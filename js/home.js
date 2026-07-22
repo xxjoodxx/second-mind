@@ -138,9 +138,23 @@
       el('div', { class: 'row gap wrap' },
         Cc.imageBtn('🧑‍🚀 تغيير الأفتار', (d) => { S.profile.avatar = d; }, { max: 300, quality: 0.85 }),
         S.profile.avatar ? el('button', { class: 'btn', on: { click: () => { S.profile.avatar = null; SM.store.save(); SM.refresh(); } } }, 'إزالة الأفتار') : null,
-        Cc.imageBtn('🌌 خلفية الواجهة الرئيسية', (d) => { S.profile.homeHero = d; }, { max: 1800 }),
+        el('button', {
+          class: 'btn',
+          on: {
+            click: async () => {
+              const d = await Cc.pickImage({ max: 1800 });
+              if (!d) return;
+              S.profile.homeHero = d; SM.store.save();
+              bgDimChoiceModal();
+            },
+          },
+        }, '🌌 خلفية الواجهة الرئيسية'),
         S.profile.homeHero ? el('button', { class: 'btn', on: { click: () => { S.profile.homeHero = null; SM.store.save(); SM.refresh(); } } }, 'إزالة الخلفية') : null,
       ),
+      S.profile.homeHero ? el('label', { class: 'row gap-s center-v', style: 'margin-top:10px;cursor:pointer' },
+        el('input', { type: 'checkbox', checked: S.profile.homeHeroDim, on: { change: (e) => { S.profile.homeHeroDim = e.target.checked; SM.store.save(); SM.refresh(); } } }),
+        el('span', { class: 'hint' }, 'تعتيم الخلفية (أوضح للقراءة) — أزل العلامة لعرضها كما هي'),
+      ) : null,
       el('div', { class: 'sep' }),
       el('div', { class: 'row gap wrap' },
         el('button', { class: 'btn', on: { click: () => SM.store.export() } }, '📤 تصدير نسخة احتياطية'),
@@ -227,18 +241,36 @@
     );
   }
 
+  /* خيار تعتيم الخلفية عند إضافتها */
+  function bgDimChoiceModal() {
+    const Cc = SM.C, S = SM.store.state;
+    const pick = (dim) => { S.profile.homeHeroDim = dim; SM.store.save(); Cc.toast('تم تحديث الخلفية 🌌'); SM.refresh(); m.close(); };
+    const m = Cc.modal('🌌 شكل الخلفية', el('div', {},
+      el('p', { class: 'muted', style: 'margin-bottom:14px' }, 'كيف تريد عرض صورة الخلفية؟'),
+      el('div', { class: 'row gap wrap center' },
+        el('button', { class: 'btn btn--acc', on: { click: () => pick(true) } }, '🌘 معتمة (أوضح للقراءة)'),
+        el('button', { class: 'btn', on: { click: () => pick(false) } }, '☀️ زيّ ما هي'),
+      ),
+    ));
+  }
+
   /* منتقي ألوان بعجلة لونية — للاسم أو لجسم الكوكب */
   function planetColorModal(p) {
     const Cc = SM.C, S = SM.store.state;
     let mode = 'body'; // body | label
     const body = el('div', {});
     const tabs = el('div', { class: 'tabs', style: 'margin-bottom:14px' });
+    const preview = el('span', { class: 'cwheel-preview' });
+    const label = el('span', { class: 'hint' });
 
-    function setColor(hex) {
+    const curColor = () => mode === 'label' ? S.labelColors[p.id] : (p.custom ? (S.custom.find(c => c.id === p.id) || {}).color : S.planetColors[p.id]);
+    function sync() { const c = curColor(); preview.style.background = c || '#334155'; label.textContent = c || 'اللون الافتراضي'; }
+
+    function setColor(hex) { // تحديث حيّ بلا إعادة بناء العجلة
       if (mode === 'label') S.labelColors[p.id] = hex;
       else if (p.custom) { const cp = S.custom.find(c => c.id === p.id); if (cp) cp.color = hex; }
       else S.planetColors[p.id] = hex;
-      SM.store.save(); SM.refresh(); paint();
+      SM.store.save(); SM.refresh(); sync();
     }
     function reset() {
       if (mode === 'label') delete S.labelColors[p.id];
@@ -250,17 +282,14 @@
       [['body', '🪐 لون الكوكب'], ['label', '🔤 لون الاسم']].forEach(([id, lb]) => {
         tabs.append(el('button', { class: 'tab' + (mode === id ? ' on' : ''), on: { click: () => { mode = id; paint(); } } }, lb));
       });
-      const cur = mode === 'label' ? S.labelColors[p.id] : (p.custom ? p.color : S.planetColors[p.id]);
       body.innerHTML = '';
       body.append(
-        el('div', { class: 'cwheel-wrap' }, Cc.colorWheel(setColor, { size: 220 })),
-        el('div', { class: 'row gap center-v center', style: 'margin-top:12px' },
-          el('span', { class: 'cwheel-preview', style: `background:${cur || '#334155'}` }),
-          el('span', { class: 'hint' }, cur ? cur : 'اللون الافتراضي'),
-          el('button', { class: 'btn btn--sm', on: { click: reset } }, '↺ افتراضي'),
-        ),
-        el('p', { class: 'hint center' }, 'اختر أي درجة من العجلة'),
+        el('div', { class: 'cwheel-wrap' }, Cc.colorWheel(setColor, { size: 220, value: curColor() })),
+        el('div', { class: 'row gap center-v center', style: 'margin-top:12px' }, preview, label,
+          el('button', { class: 'btn btn--sm', on: { click: reset } }, '↺ افتراضي')),
+        el('p', { class: 'hint center' }, 'اسحب الدائرة على العجلة لاختيار اللون'),
       );
+      sync();
     }
     paint();
     Cc.modal(`🎨 ألوان «${p.name}»`, el('div', {}, tabs, body));
@@ -269,12 +298,11 @@
   /* عجلة لون اسم «Joud» في الشريط العلوي */
   function nameColorModal() {
     const Cc = SM.C, S = SM.store.state;
-    const cur = S.profile.nameColor;
+    const preview = el('span', { class: 'cwheel-preview', style: `background:${S.profile.nameColor || '#67e8f9'}` });
     Cc.modal('🎨 لون الاسم', el('div', {},
-      el('div', { class: 'cwheel-wrap' }, Cc.colorWheel((hex) => { S.profile.nameColor = hex; SM.store.save(); SM.refresh(); }, { size: 220 })),
-      el('div', { class: 'row gap center-v center', style: 'margin-top:12px' },
-        el('span', { class: 'cwheel-preview', style: `background:${cur || '#67e8f9'}` }),
-        el('button', { class: 'btn btn--sm', on: { click: () => { S.profile.nameColor = null; SM.store.save(); SM.refresh(); } } }, '↺ افتراضي'),
+      el('div', { class: 'cwheel-wrap' }, Cc.colorWheel((hex) => { S.profile.nameColor = hex; SM.store.save(); SM.refresh(); preview.style.background = hex; }, { size: 220, value: S.profile.nameColor })),
+      el('div', { class: 'row gap center-v center', style: 'margin-top:12px' }, preview,
+        el('button', { class: 'btn btn--sm', on: { click: () => { S.profile.nameColor = null; SM.store.save(); SM.refresh(); preview.style.background = '#67e8f9'; } } }, '↺ افتراضي'),
       ),
     ));
   }
@@ -381,7 +409,7 @@
     const Cc = SM.C, S = SM.store.state;
     const hero = S.profile.homeHero;
 
-    const home = el('div', { class: 'home' + (hero ? ' home--hero' : ''), style: hero ? `background-image:url(${hero})` : '' });
+    const home = el('div', { class: 'home' + (hero ? ' home--hero' : '') + (hero && S.profile.homeHeroDim ? ' home--hero-dim' : ''), style: hero ? `background-image:url(${hero})` : '' });
 
     /* الشريط العلوي */
     const avatar = el('button', { class: 'avatar', title: 'الإعدادات', on: { click: settingsModal } },

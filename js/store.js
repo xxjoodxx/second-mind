@@ -5,7 +5,7 @@
 
   const DEFAULTS = {
     version: 1,
-    profile: { name: 'Joud', avatar: null, homeHero: null, nameColor: null },
+    profile: { name: 'Joud', avatar: null, homeHero: null, homeHeroDim: true, nameColor: null },
     settings: { currency: 'ر.س', waterGoal: 8, sportWeeklyGoal: 4, fontAr: 'Cairo', fontEn: 'Space Grotesk' },
     goals: [],           // {id,title,difficulty,done,createdAt,doneAt}
     habits: [],          // {id,name,planetId,area,createdAt,log:{'YYYY-MM-DD':true}}
