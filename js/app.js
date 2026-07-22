@@ -3,6 +3,26 @@
   const el = SM.el;
   SM._tickers = [];
 
+  /* ---------- الخطوط القابلة للتغيير ---------- */
+  SM.FONTS = {
+    ar: ['Cairo', 'Tajawal', 'Almarai', 'Changa', 'Reem Kufi', 'IBM Plex Sans Arabic', 'Noto Kufi Arabic', 'Amiri'],
+    en: ['Space Grotesk', 'Orbitron', 'Inter', 'Rubik', 'Exo 2', 'Roboto Mono', 'Press Start 2P'],
+  };
+  SM.applyFonts = function () {
+    const S = SM.store.state;
+    const ar = S.settings.fontAr || 'Cairo';
+    const en = S.settings.fontEn || 'Space Grotesk';
+    // حقن خطوط Google المطلوبة (مع بديل خطوط النظام عند عدم الاتصال)
+    const fam = [ar, en].map(f => 'family=' + encodeURIComponent(f).replace(/%20/g, '+') + ':wght@400;500;700;900').join('&');
+    let link = document.getElementById('dyn-fonts');
+    if (!link) { link = el('link', { id: 'dyn-fonts', rel: 'stylesheet' }); document.head.append(link); }
+    const href = `https://fonts.googleapis.com/css2?${fam}&display=swap`;
+    if (link.getAttribute('href') !== href) link.setAttribute('href', href);
+    const r = document.documentElement.style;
+    r.setProperty('--font', `'${ar}', 'Segoe UI', Tahoma, system-ui, sans-serif`);
+    r.setProperty('--font-en', `'${en}', 'Space Grotesk', 'Cairo', monospace`);
+  };
+
   SM.go = function (hash) {
     if (location.hash === hash) { SM.render(); return; }
     location.hash = hash;
@@ -160,6 +180,7 @@
 
   window.addEventListener('hashchange', SM.render);
   document.addEventListener('DOMContentLoaded', () => {
+    SM.applyFonts();
     initGalaxyBg();
     initStars();
     SM.render();
