@@ -145,11 +145,12 @@
               const d = await Cc.pickImage({ max: 1800 });
               if (!d) return;
               S.profile.homeHero = d; SM.store.save();
+              SM.applyBackground();
               bgDimChoiceModal();
             },
           },
         }, '🌌 خلفية الواجهة الرئيسية'),
-        S.profile.homeHero ? el('button', { class: 'btn', on: { click: () => { S.profile.homeHero = null; SM.store.save(); SM.refresh(); } } }, 'إزالة الخلفية') : null,
+        S.profile.homeHero ? el('button', { class: 'btn', on: { click: () => { S.profile.homeHero = null; SM.store.save(); SM.applyBackground(); SM.refresh(); } } }, 'إزالة الخلفية') : null,
       ),
       S.profile.homeHero ? el('label', { class: 'row gap-s center-v', style: 'margin-top:10px;cursor:pointer' },
         el('input', { type: 'checkbox', checked: S.profile.homeHeroDim, on: { change: (e) => { S.profile.homeHeroDim = e.target.checked; SM.store.save(); SM.refresh(); } } }),
@@ -412,7 +413,7 @@
     const Cc = SM.C, S = SM.store.state;
     const hero = S.profile.homeHero;
 
-    const home = el('div', { class: 'home' + (hero ? ' home--hero' : '') + (hero && S.profile.homeHeroDim ? ' home--hero-dim' : ''), style: hero ? `background-image:url(${hero})` : '' });
+    const home = el('div', { class: 'home' + (hero ? ' home--hero' : '') + (hero && S.profile.homeHeroDim ? ' home--hero-dim' : '') });
 
     /* الشريط العلوي */
     const avatar = el('button', { class: 'avatar', title: 'الإعدادات', on: { click: settingsModal } },

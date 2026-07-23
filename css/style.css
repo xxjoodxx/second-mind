@@ -315,10 +315,11 @@ textarea.inp { resize: vertical; line-height: 1.7; }
 
 /* ============ الشبكة الرئيسية ============ */
 .home { min-height: 100vh; padding-bottom: 90px; }
-.home--hero { background-size: cover; background-position: center; background-attachment: fixed; position: relative; }
-.home--hero::before { content: ''; position: fixed; inset: 0; background: rgba(4, 6, 16, .12); pointer-events: none; } /* «زيّ ما هي» — طبقة خفيفة جدًا */
+/* الصورة نفسها على طبقة #galaxy الثابتة؛ هذه الطبقات للتعتيم فقط فوقها */
+.home--hero { position: relative; }
+.home--hero::before { content: ''; position: fixed; inset: 0; z-index: 0; background: rgba(4, 6, 16, .12); pointer-events: none; } /* «زيّ ما هي» — طبقة خفيفة جدًا */
 .home--hero-dim::before { background: rgba(4, 6, 16, .72); } /* «معتمة» */
-.home--hero > * { position: relative; }
+.home--hero > * { position: relative; z-index: 1; }
 
 /* المشهد يمتد بعرض الصفحة كاملاً، واللوحتان تطفوان على الجانب فوقه */
 .home-grid { position: relative; padding: 8px 18px; }

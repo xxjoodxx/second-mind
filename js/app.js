@@ -66,15 +66,20 @@
     return `rgba(${parseInt(h.slice(0, 2), 16)},${parseInt(h.slice(2, 4), 16)},${parseInt(h.slice(4, 6), 16)},${a})`;
   }
 
-  /* الخلفية الأساسية: صورة سديم هابل الحقيقية (حسب الطلب — "بالضبط")
-     وعند تعذّر تحميلها نرسم مشهدًا مولّدًا بالكانفس كخطة بديلة */
-  function initGalaxyBg() {
-    const old = document.getElementById('galaxy');
-    if (old) old.remove();
-    const img = el('img', { id: 'galaxy', src: 'assets/galaxy.jpg', alt: '', 'aria-hidden': 'true' });
-    img.addEventListener('error', () => { img.remove(); paintGalaxy(); });
-    document.body.prepend(img);
-  }
+  /* الخلفية كطبقة ثابتة تغطي الشاشة كاملة (#galaxy):
+     - خلفية مخصّصة إن اختارها المستخدم، وإلا سديم هابل الافتراضي.
+     تُعرض دائمًا على طبقة واحدة تغطي كامل الإطار حتى لا تظهر أي خلفية خلفها. */
+  SM.applyBackground = function () {
+    const S = SM.store.state;
+    const hero = S.profile.homeHero;
+    const src = hero || 'assets/galaxy.jpg';
+    let g = document.getElementById('galaxy');
+    if (!g || g.tagName !== 'IMG') { if (g) g.remove(); g = el('img', { id: 'galaxy', alt: '', 'aria-hidden': 'true' }); document.body.prepend(g); }
+    // عند تعذّر تحميل الافتراضي فقط نرسم مشهدًا مولّدًا بديلًا
+    g.onerror = () => { if (!S.profile.homeHero) { g.remove(); paintGalaxy(); } };
+    if (g.getAttribute('src') !== src) g.setAttribute('src', src);
+  };
+  function initGalaxyBg() { SM.applyBackground(); }
 
   function paintGalaxy() {
     let cv = document.getElementById('galaxy');
