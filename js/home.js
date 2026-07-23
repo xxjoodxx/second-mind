@@ -254,19 +254,19 @@
     ));
   }
 
-  /* منتقي ألوان بعجلة لونية — للاسم أو لجسم الكوكب */
+  /* منتقي ألوان بمربع أصلي — للاسم أو لجسم الكوكب */
   function planetColorModal(p) {
     const Cc = SM.C, S = SM.store.state;
     let mode = 'body'; // body | label
     const body = el('div', {});
     const tabs = el('div', { class: 'tabs', style: 'margin-bottom:14px' });
-    const preview = el('span', { class: 'cwheel-preview' });
     const label = el('span', { class: 'hint' });
 
+    const dflt = () => mode === 'label' ? '#ffffff' : (p.color || '#5f72f5');
     const curColor = () => mode === 'label' ? S.labelColors[p.id] : (p.custom ? (S.custom.find(c => c.id === p.id) || {}).color : S.planetColors[p.id]);
-    function sync() { const c = curColor(); preview.style.background = c || '#334155'; label.textContent = c || 'اللون الافتراضي'; }
+    function sync() { const c = curColor(); label.textContent = c ? c : 'اللون الافتراضي'; }
 
-    function setColor(hex) { // تحديث حيّ بلا إعادة بناء العجلة
+    function setColor(hex) {
       if (mode === 'label') S.labelColors[p.id] = hex;
       else if (p.custom) { const cp = S.custom.find(c => c.id === p.id); if (cp) cp.color = hex; }
       else S.planetColors[p.id] = hex;
@@ -284,10 +284,12 @@
       });
       body.innerHTML = '';
       body.append(
-        el('div', { class: 'cwheel-wrap' }, Cc.colorWheel(setColor, { size: 220, value: curColor() })),
-        el('div', { class: 'row gap center-v center', style: 'margin-top:12px' }, preview, label,
-          el('button', { class: 'btn btn--sm', on: { click: reset } }, '↺ افتراضي')),
-        el('p', { class: 'hint center' }, 'اسحب الدائرة على العجلة لاختيار اللون'),
+        el('div', { class: 'colorpick' },
+          Cc.colorSquare(curColor() || dflt(), setColor),
+          el('div', { class: 'row gap center-v center', style: 'margin-top:12px' }, label,
+            el('button', { class: 'btn btn--sm', on: { click: reset } }, '↺ افتراضي')),
+          el('p', { class: 'hint center' }, 'اضغط المربّع لاختيار اللون'),
+        ),
       );
       sync();
     }
@@ -295,15 +297,16 @@
     Cc.modal(`🎨 ألوان «${p.name}»`, el('div', {}, tabs, body));
   }
 
-  /* عجلة لون اسم «Joud» في الشريط العلوي */
+  /* مربع لون اسم «Joud» في الشريط العلوي */
   function nameColorModal() {
     const Cc = SM.C, S = SM.store.state;
-    const preview = el('span', { class: 'cwheel-preview', style: `background:${S.profile.nameColor || '#67e8f9'}` });
-    Cc.modal('🎨 لون الاسم', el('div', {},
-      el('div', { class: 'cwheel-wrap' }, Cc.colorWheel((hex) => { S.profile.nameColor = hex; SM.store.save(); SM.refresh(); preview.style.background = hex; }, { size: 220, value: S.profile.nameColor })),
-      el('div', { class: 'row gap center-v center', style: 'margin-top:12px' }, preview,
-        el('button', { class: 'btn btn--sm', on: { click: () => { S.profile.nameColor = null; SM.store.save(); SM.refresh(); preview.style.background = '#67e8f9'; } } }, '↺ افتراضي'),
+    const label = el('span', { class: 'hint' }, S.profile.nameColor || 'اللون الافتراضي');
+    Cc.modal('🎨 لون الاسم', el('div', { class: 'colorpick' },
+      Cc.colorSquare(S.profile.nameColor || '#67e8f9', (hex) => { S.profile.nameColor = hex; SM.store.save(); SM.refresh(); label.textContent = hex; }),
+      el('div', { class: 'row gap center-v center', style: 'margin-top:12px' }, label,
+        el('button', { class: 'btn btn--sm', on: { click: () => { S.profile.nameColor = null; SM.store.save(); SM.refresh(); label.textContent = 'اللون الافتراضي'; } } }, '↺ افتراضي'),
       ),
+      el('p', { class: 'hint center' }, 'اضغط المربّع لاختيار اللون'),
     ));
   }
 
