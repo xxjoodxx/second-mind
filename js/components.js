@@ -3,92 +3,13 @@
   const U = SM.U, el = SM.el;
   const C = {};
 
-  /* ---------- عجلة الألوان (بمؤشر دائري متحرك بالسحب) ---------- */
-  C.colorWheel = function (onPick, opts = {}) {
-    const size = opts.size || 210;
-    const dpr = Math.min(2, window.devicePixelRatio || 1);
-    const cv = el('canvas', { class: 'cwheel', width: size * dpr, height: size * dpr, style: `width:${size}px;height:${size}px` });
-    const ctx = cv.getContext('2d');
-    const R = size * dpr / 2, inner = R * 0.30;
-    const satAt = (dist) => dist < inner ? (dist / inner) * (dist / R) : Math.min(1, 0.55 + (dist / R) * 0.45);
-    // رسم العجلة: الزاوية = درجة اللون، نصف القطر = التشبّع، ومركز فاتح
-    const img = ctx.createImageData(size * dpr, size * dpr);
-    for (let y = 0; y < size * dpr; y++) {
-      for (let x = 0; x < size * dpr; x++) {
-        const dx = x - R, dy = y - R;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        const i = (y * size * dpr + x) * 4;
-        if (dist > R) { img.data[i + 3] = 0; continue; }
-        let hue = Math.atan2(dy, dx) * 180 / Math.PI + 90;
-        hue = ((hue % 360) + 360) % 360;
-        const light = 0.96 - Math.min(1, dist / R) * 0.46;
-        const [r, g, b] = hsl(hue, satAt(dist), light);
-        img.data[i] = r; img.data[i + 1] = g; img.data[i + 2] = b; img.data[i + 3] = 255;
-      }
-    }
-    ctx.putImageData(img, 0, 0);
-
-    const handle = el('span', { class: 'cwheel-handle' });
-    const wrap = el('div', { class: 'cwheel-box', style: `width:${size}px;height:${size}px` }, cv, handle);
-
-    function placeHandle(cxPx, cyPx) { // بإحداثيات CSS (px داخل العجلة)
-      handle.style.left = cxPx + 'px';
-      handle.style.top = cyPx + 'px';
-    }
-    // ضع المؤشر مبدئيًا حسب اللون الحالي إن وُجد
-    if (opts.value && SM.pixel) {
-      const hue = SM.pixel.hueOf(opts.value);
-      const ang = (hue - 90) * Math.PI / 180;
-      const rad = (size / 2) * 0.7;
-      placeHandle(size / 2 + rad * Math.cos(ang), size / 2 + rad * Math.sin(ang));
-    } else placeHandle(size / 2, size / 2);
-
-    function pick(clientX, clientY) {
-      const rect = cv.getBoundingClientRect();
-      let lx = (clientX - rect.left) / rect.width * size;
-      let ly = (clientY - rect.top) / rect.height * size;
-      const dx = lx - size / 2, dy = ly - size / 2;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      const maxR = size / 2;
-      if (dist > maxR) { lx = size / 2 + dx / dist * maxR; ly = size / 2 + dy / dist * maxR; } // اقصر للحافة
-      placeHandle(lx, ly);
-      const px = Math.max(0, Math.min(size * dpr - 1, Math.round(lx * dpr)));
-      const py = Math.max(0, Math.min(size * dpr - 1, Math.round(ly * dpr)));
-      const d = ctx.getImageData(px, py, 1, 1).data;
-      const hex = '#' + [d[0], d[1], d[2]].map(v => v.toString(16).padStart(2, '0')).join('');
-      handle.style.background = hex;
-      onPick(hex);
-    }
-
-    let dragging = false;
-    function cleanup() {
-      window.removeEventListener('mousemove', move); window.removeEventListener('touchmove', move);
-      window.removeEventListener('mouseup', up); window.removeEventListener('touchend', up);
-    }
-    const down = (e) => { dragging = true; const t = e.touches ? e.touches[0] : e; pick(t.clientX, t.clientY); e.preventDefault(); };
-    const move = (e) => {
-      if (!document.contains(wrap)) { cleanup(); return; } // النافذة أُغلقت
-      if (!dragging) return;
-      const t = e.touches ? e.touches[0] : e; pick(t.clientX, t.clientY); e.preventDefault();
-    };
-    const up = () => { dragging = false; };
-    wrap.addEventListener('mousedown', down);
-    wrap.addEventListener('touchstart', down, { passive: false });
-    window.addEventListener('mousemove', move);
-    window.addEventListener('touchmove', move, { passive: false });
-    window.addEventListener('mouseup', up);
-    window.addEventListener('touchend', up);
-
-    return wrap;
+  /* ---------- مربع لون أصلي (يفتح منتقي ألوان النظام عند الضغط) ---------- */
+  C.colorSquare = function (value, onPick) {
+    const inp = el('input', { type: 'color', class: 'color-square', value: value || '#5f72f5' });
+    inp.addEventListener('input', () => onPick(inp.value));
+    inp.addEventListener('change', () => onPick(inp.value));
+    return inp;
   };
-  function hsl(h, s, l) {
-    const c = (1 - Math.abs(2 * l - 1)) * s, x = c * (1 - Math.abs((h / 60) % 2 - 1)), m = l - c / 2;
-    let r = 0, g = 0, b = 0;
-    if (h < 60) [r, g, b] = [c, x, 0]; else if (h < 120) [r, g, b] = [x, c, 0];
-    else if (h < 180) [r, g, b] = [0, c, x]; else if (h < 240) [r, g, b] = [0, x, c];
-    else if (h < 300) [r, g, b] = [x, 0, c]; else[r, g, b] = [c, 0, x];
-    return [Math.round((r + m) * 255), Math.round((g + m) * 255), Math.round((b + m) * 255)];
-  }
 
   /* ---------- تنبيهات ---------- */
   C.toast = function (msg) {
