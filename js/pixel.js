@@ -10,8 +10,10 @@
     };
   }
   function hexRgb(hex) {
-    const h = String(hex).replace('#', '');
-    return [parseInt(h.slice(0, 2), 16) || 136, parseInt(h.slice(2, 4), 16) || 153, parseInt(h.slice(4, 6), 16) || 170];
+    const h = String(hex).replace('#', '').padEnd(6, '0');
+    const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
+    // fallback فقط عند قيمة غير صالحة (NaN) — لا نستخدم "|| قيمة" لأن الصفر لون صحيح
+    return [isNaN(r) ? 136 : r, isNaN(g) ? 153 : g, isNaN(b) ? 170 : b];
   }
   /* f<1 تعتيم، f>1 تفتيح نحو الأبيض */
   function shade(hex, f) {
@@ -50,18 +52,8 @@
     return [Math.round((r + m) * 255), Math.round((g + m) * 255), Math.round((b + m) * 255)];
   }
   function hex2(n) { return n.toString(16).padStart(2, '0'); }
-  function hueOf(hex) { const [r, g, b] = hexRgb(hex); return rgbToHsl(r, g, b)[0]; }
-  function shiftHueHex(hex, delta) {
-    if (!delta) return hex;
-    const [r, g, b] = hexRgb(hex);
-    const [h, s, l] = rgbToHsl(r, g, b);
-    if (s < 0.06) return hex; // رمادي/أبيض لا يتأثر
-    const [nr, ng, nb] = hslToRgb(h + delta, s, l);
-    return '#' + hex2(nr) + hex2(ng) + hex2(nb);
-  }
 
   const P = {};
-  P.hueOf = hueOf;
 
   const SPECS = {
     earth:  { base: ['#2f7fd0', '#2568b4'], land: ['#3fae62', '#2c8a4c'] },
@@ -81,17 +73,26 @@
     const ctx = cv.getContext('2d');
     const c = N / 2;
     const pr = type === 'ring' ? N * 0.30 : N * 0.47;
-    /* إزاحة درجة اللون تلوّن الكوكب بالكامل مع الحفاظ على النسيج */
-    const dh = opts.hueShift || 0;
+    /* تلوين الكوكب باللون المختار مباشرةً (tint مطلق):
+       نضبط درجة اللون والتشبّع على المختار ونُبقي الإضاءة الأصلية لكل بكسل
+       حتى يبقى النسيج (الفوهات/الأحزمة/القارات) لكن باللون الذي اخترته بالضبط. */
+    const tint = opts.tint || null;
     let spec = SPECS[type] || null;
-    if (spec && dh) {
+    if (spec && tint) {
+      const thsl = rgbToHsl(...hexRgb(tint));
+      const th = thsl[0], ts = thsl[1];
+      const recolor = (hex) => {
+        const l = rgbToHsl(...hexRgb(hex))[2];
+        const [nr, ng, nb] = hslToRgb(th, ts, l);
+        return '#' + hex2(nr) + hex2(ng) + hex2(nb);
+      };
       spec = {};
       for (const k of Object.keys(SPECS[type])) {
         const v = SPECS[type][k];
-        spec[k] = Array.isArray(v) ? v.map(c2 => shiftHueHex(c2, dh)) : shiftHueHex(v, dh);
+        spec[k] = Array.isArray(v) ? v.map(recolor) : recolor(v);
       }
     }
-    const baseColor = dh ? shiftHueHex(opts.color || '#8899aa', dh) : (opts.color || '#8899aa');
+    const baseColor = tint || (opts.color || '#8899aa');
 
     /* بقع اليابسة / الفوهات */
     const blobs = [];
