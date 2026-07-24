@@ -212,9 +212,9 @@
 
     const S = SM.store.state;
     const bodyColor = S.planetColors[p.id]; // لون جسم الكوكب المختار (إن وُجد)
-    /* الكواكب الأساسية: نزيح درجة اللون؛ المخصصة: نمرر اللون مباشرة */
+    /* الكواكب الأساسية: نطبّق اللون المختار مباشرةً (tint)؛ المخصصة: اللون هو الأساس */
     let spriteOpts = { seed: seedOf(p.id), color: bodyColor || p.color };
-    if (bodyColor && !p.custom) spriteOpts.hueShift = SM.pixel.hueOf(bodyColor) - SM.pixel.hueOf(p.color);
+    if (bodyColor && !p.custom) spriteOpts.tint = bodyColor;
     const sprite = SM.pixel.planet(p.ptype || 'plain', spriteOpts);
     sprite.className = 'planet__px';
 
