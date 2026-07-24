@@ -74,16 +74,25 @@
     const c = N / 2;
     const pr = type === 'ring' ? N * 0.30 : N * 0.47;
     /* تلوين الكوكب باللون المختار مباشرةً (tint مطلق):
-       نضبط درجة اللون والتشبّع على المختار ونُبقي الإضاءة الأصلية لكل بكسل
-       حتى يبقى النسيج (الفوهات/الأحزمة/القارات) لكن باللون الذي اخترته بالضبط. */
+       نضبط درجة اللون والتشبّع والسطوع على اللون المختار، ونُبقي تباين النسيج
+       (الفوهات/الأحزمة/القارات) كإزاحات حول سطوع اللون — فيظهر اللون كما هو تمامًا
+       من حيث الدرجة والفتاحة، مع بقاء الشكل ثلاثي الأبعاد. */
     const tint = opts.tint || null;
     let spec = SPECS[type] || null;
     if (spec && tint) {
       const thsl = rgbToHsl(...hexRgb(tint));
-      const th = thsl[0], ts = thsl[1];
+      const th = thsl[0], ts = thsl[1], tl = thsl[2];
+      // متوسط سطوع لوحة النوع لتوسيط النسيج حول سطوع اللون المختار
+      const palL = [];
+      for (const k of Object.keys(SPECS[type])) {
+        const v = SPECS[type][k];
+        (Array.isArray(v) ? v : [v]).forEach(c => palL.push(rgbToHsl(...hexRgb(c))[2]));
+      }
+      const lMean = palL.reduce((a, x) => a + x, 0) / palL.length;
       const recolor = (hex) => {
         const l = rgbToHsl(...hexRgb(hex))[2];
-        const [nr, ng, nb] = hslToRgb(th, ts, l);
+        const nl = Math.max(0.06, Math.min(0.97, tl + (l - lMean)));
+        const [nr, ng, nb] = hslToRgb(th, ts, nl);
         return '#' + hex2(nr) + hex2(ng) + hex2(nb);
       };
       spec = {};
