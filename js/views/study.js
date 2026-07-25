@@ -404,29 +404,94 @@
     );
   }
 
-  function unis() {
+  function unis(S) {
     const C = SM.C;
-    return el('div', { class: 'unis-empty' },
-      el('div', { class: 'unis-empty__art' }, '🌌'),
-      el('h3', {}, 'مساحة محجوزة للمستقبل'),
-      el('p', { class: 'muted' }, 'هذا القسم متروك فارغًا حسب طلبك — جاهز ليُبنى عندما يحين وقت الجامعات ✨'),
-    );
+    const STAT = ['أفكّر فيها', 'سأقدّم', 'قدّمت', 'قُبلت', 'مرفوضة'];
+    return C.card('جامعات أخرى', el('div', {},
+      C.quickForm([
+        { k: 'name', label: 'الجامعة', placeholder: 'اسم الجامعة أو البرنامج', grow: true },
+        { k: 'deadline', label: 'موعد التقديم', type: 'date', required: false },
+        { k: 'status', label: 'الحالة', type: 'select', options: STAT },
+      ], (v) => { S.study.unis.push({ id: U.uid(), name: v.name, deadline: v.deadline, status: v.status || STAT[0], note: '' }); SM.store.save(); SM.refresh(); }),
+      C.table({
+        rows: () => S.study.unis,
+        cols: [
+          { label: 'الجامعة', render: r => el('strong', {}, r.name) },
+          { label: 'الموعد', render: r => r.deadline ? C.countdownChip(r.deadline) : '—' },
+          {
+            label: 'الحالة', render: (r) => el('select', {
+              class: 'inp inp--sm', on: { change: (e) => { r.status = e.target.value; SM.store.save(); SM.refresh(); } },
+            }, STAT.map(s => el('option', { value: s, selected: r.status === s }, s))),
+          },
+        ],
+        onDelete: (r) => S.study.unis.splice(S.study.unis.indexOf(r), 1),
+        empty: 'أضف الجامعات والبرامج التي تفكّرين فيها',
+        emptyIcon: '🎓',
+      }),
+    ), { icon: '🌊' });
+  }
+
+  function promotions(S) {
+    const C = SM.C;
+    return C.card('الترقيات', C.list({
+      get: () => S.study.promotions,
+      render: (i) => i.text, checked: (i) => i.done,
+      onToggle: (i) => { i.done = !i.done; },
+      onAdd: (text) => S.study.promotions.push({ id: U.uid(), text, done: false }),
+      onDelete: (i) => S.study.promotions.splice(S.study.promotions.indexOf(i), 1),
+      placeholder: 'هدف/ترقية جديدة...',
+      empty: 'سجّل ترقياتك وأهدافك الكبيرة هنا',
+      emptyIcon: '🏖️',
+    }), { icon: '🏖️' });
   }
 
   /* ============ واجهة الملفات/المجلدات ============ */
-  const C = () => SM.C;
+  const FN = (S, key, def) => S.study.folderNames[key] || def;   // اسم المجلد (قابل للتعديل)
+  const FC = (S, key) => S.study.folderColors[key];              // لون اسم المجلد
 
-  function folderCard(kind, name, sub, hash, opts = {}) {
-    const icon = SM.folders.make(kind, { seed: opts.seed || kind, color: opts.color });
+  function folderCard(S, cfg) {
+    const icon = SM.folders.make(cfg.kind, { seed: cfg.seed || cfg.key, color: cfg.color });
     icon.className = 'folder__img';
-    return el('button', { class: 'folder', on: { click: () => SM.go(hash) } },
+    const name = FN(S, cfg.key, cfg.name);
+    const col = FC(S, cfg.key);
+    return el('button', { class: 'folder', on: { click: () => SM.go(cfg.hash) } },
       el('div', { class: 'folder__icon' }, icon),
       el('div', { class: 'folder__label' },
-        el('span', { class: 'folder__name' }, name),
-        sub ? el('span', { class: 'folder__sub' }, sub) : null,
+        el('span', { class: 'folder__name', style: col ? `color:${col}` : '' }, name),
+        cfg.sub ? el('span', { class: 'folder__sub' }, cfg.sub) : null,
       ),
-      opts.onDelete ? el('button', { class: 'folder__del iconbtn iconbtn--danger', title: 'حذف', on: { click: (e) => { e.stopPropagation(); opts.onDelete(); } } }, '✕') : null,
+      el('button', {
+        class: 'folder__edit iconbtn', title: 'تعديل الاسم واللون',
+        on: { click: (e) => { e.stopPropagation(); folderEditModal(S, cfg); } },
+      }, '✎'),
+      cfg.onDelete ? el('button', { class: 'folder__del iconbtn iconbtn--danger', title: 'حذف', on: { click: (e) => { e.stopPropagation(); cfg.onDelete(); } } }, '🗑') : null,
     );
+  }
+
+  /* تعديل اسم المجلد ولونه — بنفس مربّع ألوان الكواكب */
+  function folderEditModal(S, cfg) {
+    const Cc = SM.C;
+    const nameInp = el('input', { class: 'inp', value: FN(S, cfg.key, cfg.name) });
+    const curCol = FC(S, cfg.key) || '#ffffff';
+    const label = el('span', { class: 'hint' }, FC(S, cfg.key) || 'اللون الافتراضي');
+    const applyName = () => {
+      const v = nameInp.value.trim();
+      if (cfg.custom) { cfg.custom.name = v || cfg.name; }
+      if (v && v !== cfg.name) S.study.folderNames[cfg.key] = v; else delete S.study.folderNames[cfg.key];
+      SM.store.save(); SM.refresh();
+    };
+    nameInp.addEventListener('change', applyName);
+    Cc.modal('✎ ' + FN(S, cfg.key, cfg.name), el('div', { class: 'settings' },
+      el('label', { class: 'qform__field', style: 'max-width:280px' }, el('span', { class: 'qform__label' }, 'اسم الملف'), nameInp),
+      el('div', { class: 'sep' }),
+      el('div', { class: 'qform__label', style: 'margin-bottom:8px' }, 'لون الاسم'),
+      el('div', { class: 'colorpick' },
+        Cc.colorSquare(curCol, (hex) => { S.study.folderColors[cfg.key] = hex; SM.store.save(); SM.refresh(); label.textContent = hex; }),
+        el('div', { class: 'row gap center-v center', style: 'margin-top:12px' }, label,
+          el('button', { class: 'btn btn--sm', on: { click: () => { delete S.study.folderColors[cfg.key]; SM.store.save(); SM.refresh(); label.textContent = 'اللون الافتراضي'; } } }, '↺ افتراضي')),
+        el('p', { class: 'hint center' }, 'اضغط المربّع لاختيار اللون'),
+      ),
+    ));
   }
 
   function glassAddTile(label, onClick) {
@@ -435,30 +500,28 @@
       el('div', { class: 'folder__label' }, el('span', { class: 'folder__name' }, label)),
     );
   }
-
   function backChip(hash, label) {
     return el('button', { class: 'btn btn--ghost backchip', on: { click: () => SM.go(hash) } }, '⟵ ', label);
   }
-
   function grid() { return el('div', { class: 'foldergrid' }); }
 
-  /* الصفحة الأولى: مجلّدا الدراسة وخطط دراسية + مجلدات مخصّصة + زر شفاف */
+  /* الصفحة الأولى */
   function topGallery(S) {
     const Cc = SM.C;
     const g = grid();
     g.append(
-      folderCard('spiky', 'الدراسة', 'الجداول والمواد والواجبات', '#/p/study/study'),
-      folderCard('cloud', 'خطط دراسية', `${S.study.plans.length} خطة`, '#/p/study/plans'),
+      folderCard(S, { key: 'top:study', kind: 'spiky', name: 'الدراسة', sub: 'الجداول والمواد والواجبات', hash: '#/p/study/study' }),
+      folderCard(S, { key: 'top:plans', kind: 'cloud', name: 'خطط دراسية', sub: 'SAT وجامعات وترقيات', hash: '#/p/study/plans' }),
     );
     (S.study.folders || []).forEach(f => {
-      g.append(folderCard('solid', f.name, `${(f.items || []).length} عنصر`, '#/p/study/cf-' + f.id, {
-        seed: f.id, color: f.color,
+      g.append(folderCard(S, {
+        key: 'cf:' + f.id, kind: 'solid', name: f.name, color: f.color, seed: f.id, custom: f,
+        sub: `${(f.items || []).length} عنصر`, hash: '#/p/study/cf-' + f.id,
         onDelete: () => Cc.confirm(`حذف مجلد «${f.name}»؟`, () => { S.study.folders.splice(S.study.folders.indexOf(f), 1); SM.store.save(); SM.refresh(); }),
       }));
     });
     g.append(glassAddTile('مجلد جديد', () => newFolderModal(S)));
-    return el('div', {}, g,
-      el('p', { class: 'hint center', style: 'margin-top:14px' }, '📁 اضغط على أي مجلد لفتحه'));
+    return el('div', {}, g, el('p', { class: 'hint center', style: 'margin-top:14px' }, '📁 اضغط المجلد لفتحه · ✎ لتغيير الاسم واللون'));
   }
 
   function newFolderModal(S) {
@@ -474,55 +537,39 @@
         S.study.folders.push({ id: U.uid(), name: v.name, color, items: [], notes: [] });
         SM.store.save(); m.close(); Cc.toast('📁 مجلد جديد'); SM.refresh();
       }, { label: '✨ إنشاء' }),
-      el('div', { style: 'margin-top:10px' }, el('span', { class: 'qform__label' }, 'اللون'), swatches),
+      el('div', { style: 'margin-top:10px' }, el('span', { class: 'qform__label' }, 'لون الملف'), swatches),
     ));
   }
 
-  /* داخل مجلد «الدراسة»: مجلدات الأدوات */
+  /* داخل «الدراسة» */
   function studyGallery(S) {
     const g = grid();
     g.append(
-      folderCard('watermelon', 'الجداول والاختبارات', 'جدول + عدّ تنازلي', '#/p/study/schedule'),
-      folderCard('fur', 'المواد', `${S.study.subjects.length} مادة`, '#/p/study/subjects'),
-      folderCard('cork', 'الواجبات والمهام', `${S.study.homework.filter(h => !h.done).length} معلّق`, '#/p/study/homework'),
-      folderCard('solid', 'ملاحظات ومراجعة', 'بومودورو + Flashcards', '#/p/study/notes', { seed: 'notes', color: '#60a5fa' }),
-      folderCard('solid', 'الأهداف والدرجات', 'معدلك وأهدافك', '#/p/study/grades', { seed: 'grades', color: '#34d399' }),
-      folderCard('solid', 'SAT', 'تحضير الاختبار', '#/p/study/sat', { seed: 'sat', color: '#f43f8e' }),
-      folderCard('solid', 'نظرة عامة', 'لوحة الدراسة', '#/p/study/dash', { seed: 'dash', color: '#a78bfa' }),
+      folderCard(S, { key: 'study:schedule', kind: 'watermelon', name: 'الجداول والاختبارات', sub: 'جدول + عدّ تنازلي', hash: '#/p/study/schedule' }),
+      folderCard(S, { key: 'study:subjects', kind: 'fur', name: 'المواد', sub: `${S.study.subjects.length} مادة`, hash: '#/p/study/subjects' }),
+      folderCard(S, { key: 'study:homework', kind: 'cork', name: 'الواجبات والمهام', sub: `${S.study.homework.filter(h => !h.done).length} معلّق`, hash: '#/p/study/homework' }),
+      folderCard(S, { key: 'study:notes', kind: 'solid', color: '#60a5fa', name: 'ملاحظات ومراجعة', sub: 'بومودورو + Flashcards', hash: '#/p/study/notes' }),
+      folderCard(S, { key: 'study:grades', kind: 'solid', color: '#34d399', name: 'الأهداف والدرجات', sub: 'معدلك وأهدافك', hash: '#/p/study/grades' }),
+      folderCard(S, { key: 'study:dash', kind: 'solid', color: '#a78bfa', name: 'نظرة عامة', sub: 'لوحة الدراسة', hash: '#/p/study/dash' }),
     );
     return el('div', {},
       el('div', { class: 'row space center-v', style: 'margin-bottom:12px' }, backChip('#/p/study', 'الملفات الرئيسية'), el('h3', { class: 'card__title' }, '📂 الدراسة')),
       g);
   }
 
-  /* خطط دراسية */
-  function plansView(S) {
-    const Cc = SM.C;
+  /* داخل «خطط دراسية»: SAT (غزال) + جامعات أخرى (ماء) + الترقيات (رمل) */
+  function plansGallery(S) {
+    const g = grid();
+    g.append(
+      folderCard(S, { key: 'plans:sat', kind: 'deer', name: 'SAT', sub: 'تحضير الاختبار', hash: '#/p/study/sat' }),
+      folderCard(S, { key: 'plans:unis', kind: 'water', name: 'جامعات أخرى', sub: `${S.study.unis.length} جامعة`, hash: '#/p/study/unis' }),
+      folderCard(S, { key: 'plans:promotions', kind: 'sand', name: 'الترقيات', sub: `${S.study.promotions.filter(p => !p.done).length} هدف`, hash: '#/p/study/promotions' }),
+    );
     return el('div', {},
       el('div', { class: 'row space center-v', style: 'margin-bottom:12px' }, backChip('#/p/study', 'الملفات الرئيسية'), el('h3', { class: 'card__title' }, '☁️ خطط دراسية')),
-      Cc.quickForm([
-        { k: 'title', label: 'خطة جديدة', placeholder: 'خطة مراجعة الفاينل...', grow: true },
-      ], (v) => { S.study.plans.push({ id: U.uid(), title: v.title, steps: [], note: '' }); SM.store.save(); SM.refresh(); }, { label: '+ خطة' }),
-      S.study.plans.length ? S.study.plans.slice().reverse().map(pl => el('div', { class: 'goalcard glass-soft' },
-        el('div', { class: 'row space' },
-          el('strong', {}, pl.title),
-          el('button', { class: 'iconbtn iconbtn--danger', on: { click: () => { S.study.plans.splice(S.study.plans.indexOf(pl), 1); SM.store.save(); SM.refresh(); } } }, '✕'),
-        ),
-        Cc.bar(pl.steps.length ? U.pct(pl.steps.filter(s => s.done).length, pl.steps.length) : 0, '#a78bfa'),
-        Cc.list({
-          get: () => pl.steps,
-          render: (s) => s.text, checked: (s) => s.done,
-          onToggle: (s) => { s.done = !s.done; },
-          onAdd: (text) => pl.steps.push({ id: U.uid(), text, done: false }),
-          onDelete: (s) => pl.steps.splice(pl.steps.indexOf(s), 1),
-          placeholder: 'خطوة في الخطة...',
-          empty: 'أضف خطوات خطتك', emptyIcon: '🪜',
-        }),
-      )) : Cc.empty('☁️', 'أنشئ خطة دراسية ونظّم خطواتها'),
-    );
+      g);
   }
 
-  /* مجلد مخصّص */
   function customFolderView(S, id) {
     const Cc = SM.C;
     const f = (S.study.folders || []).find(x => x.id === id);
@@ -548,24 +595,25 @@
     );
   }
 
-  /* غلاف أداة موجودة مع زرّ رجوع لمجلد الدراسة */
-  function toolWrap(view) {
-    return el('div', {}, el('div', { style: 'margin-bottom:12px' }, backChip('#/p/study/study', 'مجلد الدراسة')), view);
+  /* غلاف أداة داخل مجلد، مع زر رجوع للمعرض الأب */
+  function toolWrap(parentHash, parentLabel, view) {
+    return el('div', {}, el('div', { style: 'margin-bottom:12px' }, backChip(parentHash, parentLabel), view));
   }
 
   SM.views.study = function (planet, secId) {
     const S = SM.store.state;
     switch (secId) {
       case 'study': return studyGallery(S);
-      case 'plans': return plansView(S);
-      case 'subjects': return toolWrap(subjects(S));
-      case 'homework': return toolWrap(homework(S));
-      case 'schedule': return toolWrap(schedule(S));
-      case 'notes': return toolWrap(notes(S));
-      case 'grades': return toolWrap(grades(S));
-      case 'sat': return toolWrap(sat(S));
-      case 'dash': return toolWrap(dash(S));
-      case 'unis': return toolWrap(unis());
+      case 'plans': return plansGallery(S);
+      case 'subjects': return toolWrap('#/p/study/study', 'مجلد الدراسة', subjects(S));
+      case 'homework': return toolWrap('#/p/study/study', 'مجلد الدراسة', homework(S));
+      case 'schedule': return toolWrap('#/p/study/study', 'مجلد الدراسة', schedule(S));
+      case 'notes': return toolWrap('#/p/study/study', 'مجلد الدراسة', notes(S));
+      case 'grades': return toolWrap('#/p/study/study', 'مجلد الدراسة', grades(S));
+      case 'dash': return toolWrap('#/p/study/study', 'مجلد الدراسة', dash(S));
+      case 'sat': return toolWrap('#/p/study/plans', 'خطط دراسية', sat(S));
+      case 'unis': return toolWrap('#/p/study/plans', 'خطط دراسية', unis(S));
+      case 'promotions': return toolWrap('#/p/study/plans', 'خطط دراسية', promotions(S));
       default:
         if (secId && secId.indexOf('cf-') === 0) return customFolderView(S, secId.slice(3));
         return topGallery(S);

@@ -123,6 +123,93 @@
     }
   };
 
+  TEX.deer = function (ctx, W, H, seed) {
+    const r = rnd(seed);
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, '#c69256'); g.addColorStop(1, '#9c6a37');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    // خط ظهر داكن في المنتصف (كالغزال)
+    const dg = ctx.createLinearGradient(W * 0.38, 0, W * 0.62, 0);
+    dg.addColorStop(0, 'rgba(90,55,26,0)'); dg.addColorStop(0.5, 'rgba(78,46,20,.5)'); dg.addColorStop(1, 'rgba(90,55,26,0)');
+    ctx.fillStyle = dg; ctx.fillRect(W * 0.3, 0, W * 0.4, H);
+    // شعر
+    ctx.lineWidth = 1.3; ctx.lineCap = 'round';
+    const n = Math.floor(W * H / 30);
+    for (let i = 0; i < n; i++) {
+      const x = r() * W, y = r() * H, len = 5 + r() * 8, ang = -Math.PI / 2 + (r() - 0.5) * 0.9, sh = 0.6 + r() * 0.6;
+      ctx.strokeStyle = `rgba(${Math.round(190 * sh)},${Math.round(140 * sh)},${Math.round(80 * sh)},.6)`;
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(ang) * len, y + Math.sin(ang) * len); ctx.stroke();
+    }
+    // بقع بيضاء بصفوف (كالغزال) مع حواف مشعّرة
+    for (let row = 0; row < 7; row++) {
+      for (let col = 0; col < 8; col++) {
+        if (r() < 0.25) continue;
+        const x = (col + (row % 2 ? 0.5 : 0)) * W / 7 + (r() - 0.5) * 14;
+        const y = row * H / 6 + (r() - 0.5) * 12 + H * 0.05;
+        const rad = 6 + r() * 5;
+        const rg = ctx.createRadialGradient(x, y, 1, x, y, rad);
+        rg.addColorStop(0, 'rgba(250,246,236,.95)'); rg.addColorStop(0.7, 'rgba(245,238,224,.7)'); rg.addColorStop(1, 'rgba(245,238,224,0)');
+        ctx.fillStyle = rg; ctx.beginPath(); ctx.arc(x, y, rad, 0, 7); ctx.fill();
+        // خصلات شعر فوق البقعة
+        ctx.strokeStyle = 'rgba(255,252,244,.5)'; ctx.lineWidth = 1;
+        for (let k = 0; k < 5; k++) { const a = r() * 7; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(a) * rad, y + Math.sin(a) * rad); ctx.stroke(); }
+      }
+    }
+  };
+
+  TEX.water = function (ctx, W, H, seed) {
+    const r = rnd(seed);
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, '#3fb6c4'); g.addColorStop(0.5, '#2591a6'); g.addColorStop(1, '#177387');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    // موجات
+    for (let i = 0; i < 26; i++) {
+      const y = r() * H, amp = 4 + r() * 10, light = r() > 0.5;
+      ctx.strokeStyle = light ? 'rgba(180,235,240,.35)' : 'rgba(10,60,80,.3)';
+      ctx.lineWidth = 2 + r() * 4;
+      ctx.beginPath();
+      for (let x = 0; x <= W; x += 8) { const yy = y + Math.sin(x / (18 + r() * 14) + i) * amp; if (x === 0) ctx.moveTo(x, yy); else ctx.lineTo(x, yy); }
+      ctx.stroke();
+    }
+    // رغوة بيضاء
+    for (let i = 0; i < W * H / 22; i++) {
+      const x = r() * W, y = r() * H, s = r() * 1.8 + 0.4;
+      ctx.fillStyle = `rgba(255,255,255,${0.12 + r() * 0.45})`;
+      ctx.beginPath(); ctx.arc(x, y, s, 0, 7); ctx.fill();
+    }
+    // خطوط رغوة متموّجة
+    ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 1.4;
+    for (let i = 0; i < 8; i++) {
+      const y = r() * H; ctx.beginPath();
+      for (let x = 0; x <= W; x += 10) { const yy = y + Math.sin(x / 22 + i * 2) * 6; if (x === 0) ctx.moveTo(x, yy); else ctx.lineTo(x, yy); }
+      ctx.globalAlpha = 0.3 + r() * 0.3; ctx.stroke(); ctx.globalAlpha = 1;
+    }
+  };
+
+  TEX.sand = function (ctx, W, H, seed) {
+    const r = rnd(seed);
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, '#dccaa0'); g.addColorStop(1, '#bda676');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    // كثبان ناعمة (إضاءة 3D)
+    for (let i = 0; i < 7; i++) {
+      const x = r() * W, y = r() * H, rad = W * (0.14 + r() * 0.2);
+      const rg = ctx.createRadialGradient(x - rad * 0.3, y - rad * 0.3, rad * 0.1, x, y, rad);
+      rg.addColorStop(0, 'rgba(248,238,210,.5)'); rg.addColorStop(1, 'rgba(248,238,210,0)');
+      ctx.fillStyle = rg; ctx.beginPath(); ctx.arc(x, y, rad, 0, 7); ctx.fill();
+      const dx = r() * W, dy = r() * H, dr = W * (0.1 + r() * 0.16);
+      const dgd = ctx.createRadialGradient(dx, dy, dr * 0.1, dx, dy, dr);
+      dgd.addColorStop(0, 'rgba(120,95,55,.25)'); dgd.addColorStop(1, 'rgba(120,95,55,0)');
+      ctx.fillStyle = dgd; ctx.beginPath(); ctx.arc(dx, dy, dr, 0, 7); ctx.fill();
+    }
+    // حبيبات
+    for (let i = 0; i < W * H / 6; i++) {
+      const x = r() * W, y = r() * H, s = 0.5 + r() * 1.3, d = r();
+      ctx.fillStyle = d > 0.5 ? `rgba(110,88,50,${0.1 + r() * 0.22})` : `rgba(250,242,215,${0.1 + r() * 0.3})`;
+      ctx.fillRect(x, y, s, s);
+    }
+  };
+
   TEX.cork = function (ctx, W, H, seed) {
     const r = rnd(seed);
     const g = ctx.createLinearGradient(0, 0, 0, H);
@@ -162,33 +249,51 @@
     const seed = seedOf(opts.seed || kind);
     const tex = TEX[kind] || TEX.solid;
 
-    // ظل ناعم
+    // ظل خارجي عميق (إحساس 3D)
     ctx.save();
-    ctx.shadowColor = 'rgba(0,0,0,.45)'; ctx.shadowBlur = 16; ctx.shadowOffsetY = 8;
+    ctx.shadowColor = 'rgba(0,0,0,.5)'; ctx.shadowBlur = 22; ctx.shadowOffsetY = 12;
 
     // الخلفية (أغمق قليلًا)
     backPath(ctx, W, H); ctx.save(); ctx.clip();
     tex(ctx, W, H, seed + 3, opts.color);
-    ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.fillRect(0, 0, W, H); // تعتيم الخلف
+    ctx.fillStyle = 'rgba(0,0,0,.34)'; ctx.fillRect(0, 0, W, H); // تعتيم الخلف
+    // حافة اللسان العلوية (إضاءة)
+    const tg = ctx.createLinearGradient(0, H * 0.11, 0, H * 0.24);
+    tg.addColorStop(0, 'rgba(255,255,255,.22)'); tg.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = tg; ctx.fillRect(0, H * 0.11, W, H * 0.14);
     ctx.restore();
     ctx.restore();
 
-    // ورقة بيضاء تطلّ
+    // ورقة بيضاء تطلّ بظل خفيف
     const pT = H * 0.20;
-    ctx.fillStyle = '#f5f2ea';
+    ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.3)'; ctx.shadowBlur = 6; ctx.shadowOffsetY = 3;
+    ctx.fillStyle = '#f6f3ec';
     roundRect(ctx, W * 0.12, pT - 6, W * 0.52, H * 0.2, 8); ctx.fill();
+    ctx.restore();
 
     // الواجهة الأمامية بالنقش الكامل
     frontPath(ctx, W, H); ctx.save(); ctx.clip();
     tex(ctx, W, H, seed, opts.color);
-    // إضاءة علوية
-    const lg = ctx.createLinearGradient(0, H * 0.32, 0, H);
-    lg.addColorStop(0, 'rgba(255,255,255,.18)'); lg.addColorStop(0.15, 'rgba(255,255,255,0)');
-    ctx.fillStyle = lg; ctx.fillRect(0, H * 0.32, W, H);
+    // ظل داخلي أعلى الجيب (عمق ثلاثي الأبعاد)
+    const innerTop = ctx.createLinearGradient(0, H * 0.32, 0, H * 0.44);
+    innerTop.addColorStop(0, 'rgba(0,0,0,.34)'); innerTop.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = innerTop; ctx.fillRect(0, H * 0.32, W, H * 0.14);
+    // لمعة الشفة العلوية للجيب
+    const lip = ctx.createLinearGradient(0, H * 0.32, 0, H * 0.37);
+    lip.addColorStop(0, 'rgba(255,255,255,.4)'); lip.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = lip; ctx.fillRect(0, H * 0.315, W, H * 0.05);
+    // تعتيم القاع والحواف (حجم/عمق)
+    const bot = ctx.createLinearGradient(0, H * 0.6, 0, H);
+    bot.addColorStop(0, 'rgba(0,0,0,0)'); bot.addColorStop(1, 'rgba(0,0,0,.28)');
+    ctx.fillStyle = bot; ctx.fillRect(0, H * 0.6, W, H * 0.4);
+    const side = ctx.createLinearGradient(0, 0, W, 0);
+    side.addColorStop(0, 'rgba(0,0,0,.18)'); side.addColorStop(0.15, 'rgba(0,0,0,0)');
+    side.addColorStop(0.85, 'rgba(0,0,0,0)'); side.addColorStop(1, 'rgba(0,0,0,.2)');
+    ctx.fillStyle = side; ctx.fillRect(0, H * 0.32, W, H);
     ctx.restore();
 
     // حدّ خفيف
-    frontPath(ctx, W, H); ctx.strokeStyle = 'rgba(255,255,255,.18)'; ctx.lineWidth = 1.5; ctx.stroke();
+    frontPath(ctx, W, H); ctx.strokeStyle = 'rgba(255,255,255,.16)'; ctx.lineWidth = 1.5; ctx.stroke();
     return cv;
   };
 
