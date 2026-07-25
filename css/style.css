@@ -592,7 +592,10 @@ textarea.inp { resize: vertical; line-height: 1.7; }
 .folder__name { font-size: 14px; font-weight: 800; text-shadow: 0 2px 8px rgba(0, 0, 0, .9); }
 .folder__sub { font-size: 10.5px; color: rgba(232, 237, 255, .7); text-shadow: 0 1px 5px rgba(0, 0, 0, .9); }
 .folder__del { position: absolute; top: 2px; inset-inline-end: 2px; opacity: 0; transition: opacity .15s; background: rgba(4, 6, 16, .7); }
-.folder:hover .folder__del { opacity: 1; }
+.folder__edit { position: absolute; top: 2px; inset-inline-start: 2px; opacity: 0; transition: opacity .15s; background: rgba(4, 6, 16, .7); color: #fff; }
+.folder__edit:hover { background: rgba(103, 232, 249, .3); }
+.folder:hover .folder__del, .folder:hover .folder__edit { opacity: 1; }
+@media (hover: none) { .folder__del, .folder__edit { opacity: .85; } } /* اللمس: أظهرها دائمًا */
 
 /* بلاطة الإضافة الزجاجية الشفافة */
 .folder--add .folder__icon {

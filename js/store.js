@@ -71,6 +71,10 @@
       sat: { examDate: null, target: 1600, tests: [], weak: [], strong: [], resources: [] },
       plans: [],         // خطط دراسية {id,title,steps:[{id,text,done}],note}
       folders: [],       // مجلدات مخصّصة {id,name,color,items:[],notes:[]}
+      unis: [],          // جامعات أخرى {id,name,deadline,status,note}
+      promotions: [],    // الترقيات {id,text,done}
+      folderNames: {},   // مفتاح المجلد -> اسم مخصّص
+      folderColors: {},  // مفتاح المجلد -> لون اسم المجلد
     },
   };
 
