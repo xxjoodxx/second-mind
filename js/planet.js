@@ -51,6 +51,18 @@
       ),
     ));
 
+    const viewFn = p.custom ? SM.views.custom : SM.views[p.id];
+
+    /* كواكب الملفات (الدراسة): بلا قائمة جانبية — واجهة مجلدات بعرض كامل */
+    if (p.folders) {
+      const content = el('main', { class: 'pp__content pp__content--wide' },
+        viewFn ? viewFn(p, sectionId || 'root') : SM.C.empty('🚧', 'قيد البناء'),
+      );
+      pp.append(el('div', { class: 'pp__layout pp__layout--folders' }, content));
+      root.append(pp);
+      return;
+    }
+
     /* التخطيط: قائمة جانبية + محتوى */
     const nav = el('aside', { class: 'pp__side' },
       el('nav', { class: 'pp__nav' },
@@ -74,7 +86,6 @@
       ),
     );
 
-    const viewFn = p.custom ? SM.views.custom : SM.views[p.id];
     const content = el('main', { class: 'pp__content' },
       el('div', { class: 'pp__sechead' },
         el('h2', {}, sec.icon + ' ', sec.name),

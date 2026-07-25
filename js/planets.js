@@ -66,7 +66,7 @@
       ],
     },
     {
-      id: 'study', name: 'الدراسة', en: 'STUDY', color: '#c19a6b',
+      id: 'study', name: 'الدراسة', en: 'STUDY', color: '#c19a6b', folders: true,
       orbit: 0, angle: 40, size: 130, ptype: 'crater', defaultAreas: ['study'],
       sections: [
         { id: 'dash',     name: 'اللوحة العامة',        icon: '🛰️' },

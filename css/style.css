@@ -572,6 +572,39 @@ textarea.inp { resize: vertical; line-height: 1.7; }
 .pp__sechead { margin-bottom: 14px; }
 .pp__sechead h2 { font-size: 21px; font-weight: 900; text-shadow: 0 2px 14px rgba(0, 0, 0, .6); }
 
+/* ============ واجهة الملفات/المجلدات (كوكب الدراسة) ============ */
+.pp__layout--folders { grid-template-columns: minmax(0, 1fr); max-width: 1100px; margin: 0 auto; }
+.pp__content--wide { min-width: 0; }
+.backchip { padding: 6px 12px; font-size: 12.5px; }
+
+.foldergrid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 20px 16px; padding: 6px 2px;
+}
+.folder {
+  position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 6px; border-radius: 16px; background: transparent; transition: transform .18s;
+}
+.folder:hover { transform: translateY(-4px); }
+.folder__icon { width: 100%; display: flex; align-items: center; justify-content: center; }
+.folder__img { width: 100%; max-width: 172px; height: auto; display: block; filter: drop-shadow(0 8px 18px rgba(0, 0, 0, .45)); }
+.folder__label { text-align: center; display: flex; flex-direction: column; gap: 1px; }
+.folder__name { font-size: 14px; font-weight: 800; text-shadow: 0 2px 8px rgba(0, 0, 0, .9); }
+.folder__sub { font-size: 10.5px; color: rgba(232, 237, 255, .7); text-shadow: 0 1px 5px rgba(0, 0, 0, .9); }
+.folder__del { position: absolute; top: 2px; inset-inline-end: 2px; opacity: 0; transition: opacity .15s; background: rgba(4, 6, 16, .7); }
+.folder:hover .folder__del { opacity: 1; }
+
+/* بلاطة الإضافة الزجاجية الشفافة */
+.folder--add .folder__icon {
+  aspect-ratio: 5/4; max-width: 172px; margin: 0 auto; border-radius: 18px;
+  background: linear-gradient(160deg, rgba(255, 255, 255, .16), rgba(20, 26, 44, .22) 55%, rgba(4, 6, 14, .26));
+  border: 1.5px dashed rgba(255, 255, 255, .45);
+  backdrop-filter: blur(9px); -webkit-backdrop-filter: blur(9px);
+  box-shadow: inset 0 2px 8px rgba(255, 255, 255, .18);
+}
+.folder--add .folder__plus { font-size: 46px; font-weight: 300; color: rgba(255, 255, 255, .85); line-height: 1; }
+.folder--add:hover .folder__icon { border-color: rgba(255, 255, 255, .7); background: linear-gradient(160deg, rgba(255, 255, 255, .24), rgba(20, 26, 44, .26)); }
+
 /* ============ لوحة العادات ============ */
 .hboard { overflow-x: auto; padding-bottom: 4px; }
 .hboard__row {
