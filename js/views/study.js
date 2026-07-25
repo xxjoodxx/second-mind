@@ -413,17 +413,162 @@
     );
   }
 
+  /* ============ واجهة الملفات/المجلدات ============ */
+  const C = () => SM.C;
+
+  function folderCard(kind, name, sub, hash, opts = {}) {
+    const icon = SM.folders.make(kind, { seed: opts.seed || kind, color: opts.color });
+    icon.className = 'folder__img';
+    return el('button', { class: 'folder', on: { click: () => SM.go(hash) } },
+      el('div', { class: 'folder__icon' }, icon),
+      el('div', { class: 'folder__label' },
+        el('span', { class: 'folder__name' }, name),
+        sub ? el('span', { class: 'folder__sub' }, sub) : null,
+      ),
+      opts.onDelete ? el('button', { class: 'folder__del iconbtn iconbtn--danger', title: 'حذف', on: { click: (e) => { e.stopPropagation(); opts.onDelete(); } } }, '✕') : null,
+    );
+  }
+
+  function glassAddTile(label, onClick) {
+    return el('button', { class: 'folder folder--add', on: { click: onClick } },
+      el('div', { class: 'folder__icon' }, el('span', { class: 'folder__plus' }, '+')),
+      el('div', { class: 'folder__label' }, el('span', { class: 'folder__name' }, label)),
+    );
+  }
+
+  function backChip(hash, label) {
+    return el('button', { class: 'btn btn--ghost backchip', on: { click: () => SM.go(hash) } }, '⟵ ', label);
+  }
+
+  function grid() { return el('div', { class: 'foldergrid' }); }
+
+  /* الصفحة الأولى: مجلّدا الدراسة وخطط دراسية + مجلدات مخصّصة + زر شفاف */
+  function topGallery(S) {
+    const Cc = SM.C;
+    const g = grid();
+    g.append(
+      folderCard('spiky', 'الدراسة', 'الجداول والمواد والواجبات', '#/p/study/study'),
+      folderCard('cloud', 'خطط دراسية', `${S.study.plans.length} خطة`, '#/p/study/plans'),
+    );
+    (S.study.folders || []).forEach(f => {
+      g.append(folderCard('solid', f.name, `${(f.items || []).length} عنصر`, '#/p/study/cf-' + f.id, {
+        seed: f.id, color: f.color,
+        onDelete: () => Cc.confirm(`حذف مجلد «${f.name}»؟`, () => { S.study.folders.splice(S.study.folders.indexOf(f), 1); SM.store.save(); SM.refresh(); }),
+      }));
+    });
+    g.append(glassAddTile('مجلد جديد', () => newFolderModal(S)));
+    return el('div', {}, g,
+      el('p', { class: 'hint center', style: 'margin-top:14px' }, '📁 اضغط على أي مجلد لفتحه'));
+  }
+
+  function newFolderModal(S) {
+    const Cc = SM.C;
+    let color = '#f4b23e';
+    const swatches = el('div', { class: 'swatches' });
+    ['#f4b23e', '#f43f8e', '#22d3ee', '#a3e635', '#a78bfa', '#fb7185', '#34d399', '#60a5fa'].forEach(c => {
+      const btn = el('button', { class: 'swatch' + (c === color ? ' on' : ''), style: `background:${c}`, on: { click: () => { color = c; swatches.querySelectorAll('.swatch').forEach(x => x.classList.remove('on')); btn.classList.add('on'); } } });
+      swatches.append(btn);
+    });
+    const m = Cc.modal('📁 مجلد جديد', el('div', {},
+      Cc.quickForm([{ k: 'name', label: 'اسم المجلد', placeholder: 'مثال: مشاريع، مراجعات...', grow: true }], (v) => {
+        S.study.folders.push({ id: U.uid(), name: v.name, color, items: [], notes: [] });
+        SM.store.save(); m.close(); Cc.toast('📁 مجلد جديد'); SM.refresh();
+      }, { label: '✨ إنشاء' }),
+      el('div', { style: 'margin-top:10px' }, el('span', { class: 'qform__label' }, 'اللون'), swatches),
+    ));
+  }
+
+  /* داخل مجلد «الدراسة»: مجلدات الأدوات */
+  function studyGallery(S) {
+    const g = grid();
+    g.append(
+      folderCard('watermelon', 'الجداول والاختبارات', 'جدول + عدّ تنازلي', '#/p/study/schedule'),
+      folderCard('fur', 'المواد', `${S.study.subjects.length} مادة`, '#/p/study/subjects'),
+      folderCard('cork', 'الواجبات والمهام', `${S.study.homework.filter(h => !h.done).length} معلّق`, '#/p/study/homework'),
+      folderCard('solid', 'ملاحظات ومراجعة', 'بومودورو + Flashcards', '#/p/study/notes', { seed: 'notes', color: '#60a5fa' }),
+      folderCard('solid', 'الأهداف والدرجات', 'معدلك وأهدافك', '#/p/study/grades', { seed: 'grades', color: '#34d399' }),
+      folderCard('solid', 'SAT', 'تحضير الاختبار', '#/p/study/sat', { seed: 'sat', color: '#f43f8e' }),
+      folderCard('solid', 'نظرة عامة', 'لوحة الدراسة', '#/p/study/dash', { seed: 'dash', color: '#a78bfa' }),
+    );
+    return el('div', {},
+      el('div', { class: 'row space center-v', style: 'margin-bottom:12px' }, backChip('#/p/study', 'الملفات الرئيسية'), el('h3', { class: 'card__title' }, '📂 الدراسة')),
+      g);
+  }
+
+  /* خطط دراسية */
+  function plansView(S) {
+    const Cc = SM.C;
+    return el('div', {},
+      el('div', { class: 'row space center-v', style: 'margin-bottom:12px' }, backChip('#/p/study', 'الملفات الرئيسية'), el('h3', { class: 'card__title' }, '☁️ خطط دراسية')),
+      Cc.quickForm([
+        { k: 'title', label: 'خطة جديدة', placeholder: 'خطة مراجعة الفاينل...', grow: true },
+      ], (v) => { S.study.plans.push({ id: U.uid(), title: v.title, steps: [], note: '' }); SM.store.save(); SM.refresh(); }, { label: '+ خطة' }),
+      S.study.plans.length ? S.study.plans.slice().reverse().map(pl => el('div', { class: 'goalcard glass-soft' },
+        el('div', { class: 'row space' },
+          el('strong', {}, pl.title),
+          el('button', { class: 'iconbtn iconbtn--danger', on: { click: () => { S.study.plans.splice(S.study.plans.indexOf(pl), 1); SM.store.save(); SM.refresh(); } } }, '✕'),
+        ),
+        Cc.bar(pl.steps.length ? U.pct(pl.steps.filter(s => s.done).length, pl.steps.length) : 0, '#a78bfa'),
+        Cc.list({
+          get: () => pl.steps,
+          render: (s) => s.text, checked: (s) => s.done,
+          onToggle: (s) => { s.done = !s.done; },
+          onAdd: (text) => pl.steps.push({ id: U.uid(), text, done: false }),
+          onDelete: (s) => pl.steps.splice(pl.steps.indexOf(s), 1),
+          placeholder: 'خطوة في الخطة...',
+          empty: 'أضف خطوات خطتك', emptyIcon: '🪜',
+        }),
+      )) : Cc.empty('☁️', 'أنشئ خطة دراسية ونظّم خطواتها'),
+    );
+  }
+
+  /* مجلد مخصّص */
+  function customFolderView(S, id) {
+    const Cc = SM.C;
+    const f = (S.study.folders || []).find(x => x.id === id);
+    if (!f) return Cc.empty('🌫️', 'هذا المجلد لم يعد موجودًا');
+    return el('div', {},
+      el('div', { class: 'row space center-v', style: 'margin-bottom:12px' }, backChip('#/p/study', 'الملفات الرئيسية'), el('h3', { class: 'card__title' }, '📁 ' + f.name)),
+      Cc.card('العناصر', Cc.list({
+        get: () => f.items,
+        render: (i) => i.text, checked: (i) => i.done,
+        onToggle: (i) => { i.done = !i.done; },
+        onAdd: (text) => f.items.push({ id: U.uid(), text, done: false }),
+        onDelete: (i) => f.items.splice(f.items.indexOf(i), 1),
+        placeholder: 'عنصر جديد...',
+        empty: 'أضف عناصر هذا المجلد', emptyIcon: '✅',
+      }), { icon: '✅' }),
+      Cc.card('ملاحظات', el('div', {},
+        Cc.quickForm([{ k: 'title', label: 'العنوان', grow: true }, { k: 'body', label: 'الملاحظة', type: 'textarea', rows: 2 }],
+          (v) => { f.notes.push({ id: U.uid(), title: v.title, body: v.body }); SM.store.save(); SM.refresh(); }),
+        (f.notes || []).slice().reverse().map(n => el('details', { class: 'acc' },
+          el('summary', {}, '🗒️ ' + n.title, el('button', { class: 'iconbtn iconbtn--danger', on: { click: (e) => { e.preventDefault(); f.notes.splice(f.notes.indexOf(n), 1); SM.store.save(); SM.refresh(); } } }, '✕')),
+          el('p', { class: 'acc__body' }, n.body || '—'))),
+      ), { icon: '🗒️' }),
+    );
+  }
+
+  /* غلاف أداة موجودة مع زرّ رجوع لمجلد الدراسة */
+  function toolWrap(view) {
+    return el('div', {}, el('div', { style: 'margin-bottom:12px' }, backChip('#/p/study/study', 'مجلد الدراسة')), view);
+  }
+
   SM.views.study = function (planet, secId) {
     const S = SM.store.state;
     switch (secId) {
-      case 'subjects': return subjects(S);
-      case 'homework': return homework(S);
-      case 'schedule': return schedule(S);
-      case 'notes': return notes(S);
-      case 'grades': return grades(S);
-      case 'sat': return sat(S);
-      case 'unis': return unis();
-      default: return dash(S);
+      case 'study': return studyGallery(S);
+      case 'plans': return plansView(S);
+      case 'subjects': return toolWrap(subjects(S));
+      case 'homework': return toolWrap(homework(S));
+      case 'schedule': return toolWrap(schedule(S));
+      case 'notes': return toolWrap(notes(S));
+      case 'grades': return toolWrap(grades(S));
+      case 'sat': return toolWrap(sat(S));
+      case 'dash': return toolWrap(dash(S));
+      case 'unis': return toolWrap(unis());
+      default:
+        if (secId && secId.indexOf('cf-') === 0) return customFolderView(S, secId.slice(3));
+        return topGallery(S);
     }
   };
 })();

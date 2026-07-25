@@ -40,7 +40,7 @@
     const parts = hash.split('/').filter(Boolean);
 
     if (parts[0] === 'p' && parts[1]) {
-      SM.renderPlanet(root, parts[1], parts[2] || 'dash');
+      SM.renderPlanet(root, parts[1], parts[2] || '');
     } else {
       SM.renderHome(root);
     }
@@ -55,7 +55,7 @@
     root.innerHTML = '';
     const hash = location.hash.replace(/^#\/?/, '');
     const parts = hash.split('/').filter(Boolean);
-    if (parts[0] === 'p' && parts[1]) SM.renderPlanet(root, parts[1], parts[2] || 'dash');
+    if (parts[0] === 'p' && parts[1]) SM.renderPlanet(root, parts[1], parts[2] || '');
     else SM.renderHome(root);
     if (document.scrollingElement) document.scrollingElement.scrollTop = sc;
   };

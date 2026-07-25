@@ -69,6 +69,8 @@
       grades: [],        // {id,subjectId,title,score,outOf}
       goals: [],         // {id,title,target,current}
       sat: { examDate: null, target: 1600, tests: [], weak: [], strong: [], resources: [] },
+      plans: [],         // خطط دراسية {id,title,steps:[{id,text,done}],note}
+      folders: [],       // مجلدات مخصّصة {id,name,color,items:[],notes:[]}
     },
   };
 
