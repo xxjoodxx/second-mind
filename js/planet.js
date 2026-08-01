@@ -2,6 +2,25 @@
 (function () {
   const U = SM.U, el = SM.el;
 
+  /* اختيار الخطوط — متاح من صفحة الكوكب أيضًا */
+  function fontsModal() {
+    const Cc = SM.C, S = SM.store.state;
+    const mk = (list, key, fallback, isEn) => {
+      const sel = el('select', {
+        class: 'inp', style: `font-family:'${S.settings[key]}',${isEn ? 'monospace' : 'sans-serif'}`,
+        on: { change: (e) => { S.settings[key] = e.target.value; SM.store.save(); SM.applyFonts(); sel.style.fontFamily = `'${e.target.value}',${isEn ? 'monospace' : 'sans-serif'}`; } },
+      }, list.map(f => el('option', { value: f, selected: S.settings[key] === f, style: `font-family:'${f}',${isEn ? 'monospace' : 'sans-serif'}` }, f)));
+      return sel;
+    };
+    Cc.modal('🔤 خطوط النصوص', el('div', { class: 'settings' },
+      el('div', { class: 'row gap wrap' },
+        el('label', { class: 'qform__field' }, el('span', { class: 'qform__label' }, 'الخط العربي'), mk(SM.FONTS.ar, 'fontAr', 'Cairo', false)),
+        el('label', { class: 'qform__field' }, el('span', { class: 'qform__label' }, 'الخط الإنجليزي والأرقام'), mk(SM.FONTS.en, 'fontEn', 'Space Grotesk', true)),
+      ),
+      el('p', { class: 'hint' }, 'يُطبَّق على الموقع كامل فورًا'),
+    ));
+  }
+
   function heroModal(p) {
     const Cc = SM.C, S = SM.store.state;
     const m = Cc.modal('🖼️ خلفية الكوكب', el('div', {},
@@ -32,22 +51,25 @@
     const sections = p.sections;
     const sec = sections.find(s => s.id === sectionId) || sections[0];
     const hero = S.heroes[p.id];
+    // الخلفية تُعرض على طبقة #galaxy الثابتة (تغطي حتى عند السحب/الـoverscroll فلا تظهر خلفية الصفحة الأولى)
+    if (SM.applyPlanetBg) SM.applyPlanetBg(hero || null);
 
     const pp = el('div', {
       class: 'pp' + (hero ? ' pp--img' : (p.custom ? ' pp--custom' : ' pp--' + p.id)),
-      style: (hero ? `background-image:url(${hero});` : '') + `--pc:${p.color};`,
+      style: `--pc:${p.color};`,
     });
     pp.append(el('i', { class: 'pp__overlay' }));
 
-    /* الشريط العلوي */
+    /* الشريط العلوي — أزرار زجاجية دائرية، بلا خط سفلي */
     pp.append(el('header', { class: 'pp__top' },
-      el('button', { class: 'btn btn--ghost', on: { click: () => SM.go('') } }, '🪐 العودة للمجرة'),
+      el('button', { class: 'ppbtn glass--sheen', title: 'العودة للمجرة', on: { click: () => SM.go('') } }, '🪐 العودة للمجرة'),
       el('div', { class: 'pp__title' },
         el('span', { class: 'pp__dot', style: `background:${p.color}` }),
         el('h1', { class: p.rainbow ? 'rainbow-text' : '' }, 'كوكب ', p.name),
       ),
       el('div', { class: 'row gap-s' },
-        el('button', { class: 'btn btn--ghost', on: { click: () => heroModal(p) } }, '🖼️ الخلفية'),
+        el('button', { class: 'ppbtn glass--sheen', title: 'الخطوط', on: { click: fontsModal } }, '🔤 الخطوط'),
+        el('button', { class: 'ppbtn glass--sheen', title: 'الخلفية', on: { click: () => heroModal(p) } }, '🖼️ الخلفية'),
       ),
     ));
 

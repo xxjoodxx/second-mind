@@ -450,8 +450,10 @@
   const FC = (S, key) => S.study.folderColors[key];              // لون اسم المجلد
 
   function folderCard(S, cfg) {
-    const icon = SM.folders.make(cfg.kind, { seed: cfg.seed || cfg.key, color: cfg.color });
-    icon.className = 'folder__img';
+    // صورة حقيقية للملف إن وُجدت، وإلا شكل مرسوم بالكانفس
+    const icon = cfg.img
+      ? el('img', { class: 'folder__img', src: cfg.img, alt: '', loading: 'lazy' })
+      : (() => { const c = SM.folders.make(cfg.kind, { seed: cfg.seed || cfg.key, color: cfg.color }); c.className = 'folder__img'; return c; })();
     const name = FN(S, cfg.key, cfg.name);
     const col = FC(S, cfg.key);
     return el('button', { class: 'folder', on: { click: () => SM.go(cfg.hash) } },
@@ -510,8 +512,8 @@
     const Cc = SM.C;
     const g = grid();
     g.append(
-      folderCard(S, { key: 'top:study', kind: 'spiky', name: 'الدراسة', sub: 'الجداول والمواد والواجبات', hash: '#/p/study/study' }),
-      folderCard(S, { key: 'top:plans', kind: 'cloud', name: 'خطط دراسية', sub: 'SAT وجامعات وترقيات', hash: '#/p/study/plans' }),
+      folderCard(S, { key: 'top:study', img: 'assets/folders/study.png', name: 'الدراسة', sub: 'الجداول والمواد والواجبات', hash: '#/p/study/study' }),
+      folderCard(S, { key: 'top:plans', img: 'assets/folders/plans.png', name: 'خطط دراسية', sub: 'SAT وجامعات وترقيات', hash: '#/p/study/plans' }),
     );
     (S.study.folders || []).forEach(f => {
       g.append(folderCard(S, {
@@ -545,8 +547,8 @@
   function studyGallery(S) {
     const g = grid();
     g.append(
-      folderCard(S, { key: 'study:schedule', kind: 'watermelon', name: 'الجداول والاختبارات', sub: 'جدول + عدّ تنازلي', hash: '#/p/study/schedule' }),
-      folderCard(S, { key: 'study:subjects', kind: 'fur', name: 'المواد', sub: `${S.study.subjects.length} مادة`, hash: '#/p/study/subjects' }),
+      folderCard(S, { key: 'study:schedule', img: 'assets/folders/schedule.png', name: 'الجداول والاختبارات', sub: 'جدول + عدّ تنازلي', hash: '#/p/study/schedule' }),
+      folderCard(S, { key: 'study:subjects', img: 'assets/folders/subjects.png', name: 'المواد', sub: `${S.study.subjects.length} مادة`, hash: '#/p/study/subjects' }),
       folderCard(S, { key: 'study:homework', kind: 'cork', name: 'الواجبات والمهام', sub: `${S.study.homework.filter(h => !h.done).length} معلّق`, hash: '#/p/study/homework' }),
       folderCard(S, { key: 'study:notes', kind: 'solid', color: '#60a5fa', name: 'ملاحظات ومراجعة', sub: 'بومودورو + Flashcards', hash: '#/p/study/notes' }),
       folderCard(S, { key: 'study:grades', kind: 'solid', color: '#34d399', name: 'الأهداف والدرجات', sub: 'معدلك وأهدافك', hash: '#/p/study/grades' }),
@@ -561,9 +563,9 @@
   function plansGallery(S) {
     const g = grid();
     g.append(
-      folderCard(S, { key: 'plans:sat', kind: 'deer', name: 'SAT', sub: 'تحضير الاختبار', hash: '#/p/study/sat' }),
-      folderCard(S, { key: 'plans:unis', kind: 'water', name: 'جامعات أخرى', sub: `${S.study.unis.length} جامعة`, hash: '#/p/study/unis' }),
-      folderCard(S, { key: 'plans:promotions', kind: 'sand', name: 'الترقيات', sub: `${S.study.promotions.filter(p => !p.done).length} هدف`, hash: '#/p/study/promotions' }),
+      folderCard(S, { key: 'plans:sat', img: 'assets/folders/sat.png', name: 'SAT', sub: 'تحضير الاختبار', hash: '#/p/study/sat' }),
+      folderCard(S, { key: 'plans:unis', img: 'assets/folders/unis.png', name: 'جامعات أخرى', sub: `${S.study.unis.length} جامعة`, hash: '#/p/study/unis' }),
+      folderCard(S, { key: 'plans:promotions', img: 'assets/folders/promotions.png', name: 'الترقيات', sub: `${S.study.promotions.filter(p => !p.done).length} هدف`, hash: '#/p/study/promotions' }),
     );
     return el('div', {},
       el('div', { class: 'row space center-v', style: 'margin-bottom:12px' }, backChip('#/p/study', 'الملفات الرئيسية'), el('h3', { class: 'card__title' }, '☁️ خطط دراسية')),
