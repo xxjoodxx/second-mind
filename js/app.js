@@ -42,6 +42,7 @@
     if (parts[0] === 'p' && parts[1]) {
       SM.renderPlanet(root, parts[1], parts[2] || '');
     } else {
+      SM.applyBackground();
       SM.renderHome(root);
     }
     window.scrollTo(0, 0);
@@ -56,7 +57,7 @@
     const hash = location.hash.replace(/^#\/?/, '');
     const parts = hash.split('/').filter(Boolean);
     if (parts[0] === 'p' && parts[1]) SM.renderPlanet(root, parts[1], parts[2] || '');
-    else SM.renderHome(root);
+    else { SM.applyBackground(); SM.renderHome(root); }
     if (document.scrollingElement) document.scrollingElement.scrollTop = sc;
   };
 
@@ -69,15 +70,25 @@
   /* الخلفية كطبقة ثابتة تغطي الشاشة كاملة (#galaxy):
      - خلفية مخصّصة إن اختارها المستخدم، وإلا سديم هابل الافتراضي.
      تُعرض دائمًا على طبقة واحدة تغطي كامل الإطار حتى لا تظهر أي خلفية خلفها. */
-  SM.applyBackground = function () {
-    const S = SM.store.state;
-    const hero = S.profile.homeHero;
-    const src = hero || 'assets/galaxy.jpg';
+  function ensureGalaxy() {
     let g = document.getElementById('galaxy');
     if (!g || g.tagName !== 'IMG') { if (g) g.remove(); g = el('img', { id: 'galaxy', alt: '', 'aria-hidden': 'true' }); document.body.prepend(g); }
+    return g;
+  }
+  SM.applyBackground = function () {
+    const S = SM.store.state;
+    const src = S.profile.homeHero || 'assets/galaxy.jpg';
+    const g = ensureGalaxy();
+    g.style.display = '';
     // عند تعذّر تحميل الافتراضي فقط نرسم مشهدًا مولّدًا بديلًا
     g.onerror = () => { if (!S.profile.homeHero) { g.remove(); paintGalaxy(); } };
     if (g.getAttribute('src') !== src) g.setAttribute('src', src);
+  };
+  /* خلفية صفحة الكوكب على نفس الطبقة الثابتة (تغطي الـoverscroll فلا تظهر خلفية الصفحة الأولى) */
+  SM.applyPlanetBg = function (hero) {
+    const g = ensureGalaxy();
+    if (hero) { g.style.display = ''; g.onerror = null; if (g.getAttribute('src') !== hero) g.setAttribute('src', hero); }
+    else { g.style.display = 'none'; } // بلا خلفية مخصّصة: الكوكب يعرض تدرّجه، والـoverscroll يظهر أسود
   };
   function initGalaxyBg() { SM.applyBackground(); }
 
