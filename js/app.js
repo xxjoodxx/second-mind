@@ -8,19 +8,32 @@
     ar: ['Cairo', 'Tajawal', 'Almarai', 'Changa', 'Reem Kufi', 'IBM Plex Sans Arabic', 'Noto Kufi Arabic', 'Amiri'],
     en: ['Space Grotesk', 'Orbitron', 'Inter', 'Rubik', 'Exo 2', 'Roboto Mono', 'Press Start 2P'],
   };
+  /* بناء متغيّري الخط من عائلة عربية وأخرى إنجليزية */
+  SM.fontVars = function (ar, en) {
+    return {
+      ar: `'${ar}', 'Segoe UI', Tahoma, system-ui, sans-serif`,
+      en: `'${en}', 'Space Grotesk', 'Cairo', monospace`,
+    };
+  };
   SM.applyFonts = function () {
     const S = SM.store.state;
     const ar = S.settings.fontAr || 'Cairo';
     const en = S.settings.fontEn || 'Space Grotesk';
+    // اجمع كل العائلات المطلوبة: الرئيسية + خطوط الكواكب المنفصلة
+    const fams = new Set([ar, en]);
+    const pf = S.settings.planetFonts || {};
+    Object.keys(pf).forEach(k => { const f = pf[k]; if (f) { if (f.ar) fams.add(f.ar); if (f.en) fams.add(f.en); } });
     // حقن خطوط Google المطلوبة (مع بديل خطوط النظام عند عدم الاتصال)
-    const fam = [ar, en].map(f => 'family=' + encodeURIComponent(f).replace(/%20/g, '+') + ':wght@400;500;700;900').join('&');
+    const fam = [...fams].map(f => 'family=' + encodeURIComponent(f).replace(/%20/g, '+') + ':wght@400;500;700;900').join('&');
     let link = document.getElementById('dyn-fonts');
     if (!link) { link = el('link', { id: 'dyn-fonts', rel: 'stylesheet' }); document.head.append(link); }
     const href = `https://fonts.googleapis.com/css2?${fam}&display=swap`;
     if (link.getAttribute('href') !== href) link.setAttribute('href', href);
+    // متغيّرا الخط العام (الواجهة الرئيسية) على الجذر
+    const v = SM.fontVars(ar, en);
     const r = document.documentElement.style;
-    r.setProperty('--font', `'${ar}', 'Segoe UI', Tahoma, system-ui, sans-serif`);
-    r.setProperty('--font-en', `'${en}', 'Space Grotesk', 'Cairo', monospace`);
+    r.setProperty('--font', v.ar);
+    r.setProperty('--font-en', v.en);
   };
 
   SM.go = function (hash) {
