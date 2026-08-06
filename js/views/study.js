@@ -448,12 +448,13 @@
   /* ============ واجهة الملفات/المجلدات ============ */
   const FN = (S, key, def) => S.study.folderNames[key] || def;   // اسم المجلد (قابل للتعديل)
   const FC = (S, key) => S.study.folderColors[key];              // لون اسم المجلد
+  // لون جسم المجلد الزجاجي: تعديل المستخدم ← لون المجلد المخصّص ← الافتراضي
+  const FIC = (S, cfg) => S.study.folderIconColors[cfg.key] || (cfg.custom && cfg.custom.color) || cfg.color || '#4aa8e8';
 
   function folderCard(S, cfg) {
-    // صورة حقيقية للملف إن وُجدت، وإلا شكل مرسوم بالكانفس
-    const icon = cfg.img
-      ? el('img', { class: 'folder__img', src: cfg.img, alt: '', loading: 'lazy' })
-      : (() => { const c = SM.folders.make(cfg.kind, { seed: cfg.seed || cfg.key, color: cfg.color }); c.className = 'folder__img'; return c; })();
+    // مجلد زجاجي ثلاثي الأبعاد بلون الملف
+    const icon = SM.folders.glossy(FIC(S, cfg));
+    icon.setAttribute('class', 'folder__img');
     const name = FN(S, cfg.key, cfg.name);
     const col = FC(S, cfg.key);
     return el('button', { class: 'folder', on: { click: () => SM.go(cfg.hash) } },
@@ -470,7 +471,7 @@
     );
   }
 
-  /* تعديل اسم المجلد ولونه — بنفس مربّع ألوان الكواكب */
+  /* تعديل اسم المجلد ولون جسمه ولون اسمه */
   function folderEditModal(S, cfg) {
     const Cc = SM.C;
     const nameInp = el('input', { class: 'inp', value: FN(S, cfg.key, cfg.name) });
@@ -483,10 +484,35 @@
       SM.store.save(); SM.refresh();
     };
     nameInp.addEventListener('change', applyName);
+
+    // معاينة حيّة لجسم المجلد
+    const preview = el('div', { style: 'width:104px;flex:none' });
+    const renderPreview = () => { preview.innerHTML = ''; const g = SM.folders.glossy(FIC(S, cfg)); g.setAttribute('class', 'folder__img'); preview.append(g); };
+    renderPreview();
+    const setBody = (hex) => {
+      if (cfg.custom) cfg.custom.color = hex; else S.study.folderIconColors[cfg.key] = hex;
+      SM.store.save(); renderPreview(); SM.refresh();
+    };
+    const resetBody = () => {
+      if (cfg.custom) cfg.custom.color = '#f4b23e'; else delete S.study.folderIconColors[cfg.key];
+      SM.store.save(); renderPreview(); SM.refresh();
+    };
+
     Cc.modal('✎ ' + FN(S, cfg.key, cfg.name), el('div', { class: 'settings' },
       el('label', { class: 'qform__field', style: 'max-width:280px' }, el('span', { class: 'qform__label' }, 'اسم الملف'), nameInp),
       el('div', { class: 'sep' }),
-      el('div', { class: 'qform__label', style: 'margin-bottom:8px' }, 'لون الاسم'),
+      el('div', { class: 'qform__label', style: 'margin-bottom:8px' }, 'لون المجلد'),
+      el('div', { class: 'row gap', style: 'align-items:flex-start' },
+        preview,
+        el('div', { class: 'colorpick', style: 'flex:1' },
+          Cc.colorSquare(FIC(S, cfg), setBody),
+          el('div', { class: 'row gap center-v', style: 'margin-top:10px' },
+            el('button', { class: 'btn btn--sm', on: { click: resetBody } }, '↺ افتراضي')),
+          el('p', { class: 'hint' }, 'اضغط المربّع لاختيار لون جسم المجلد'),
+        ),
+      ),
+      el('div', { class: 'sep' }),
+      el('div', { class: 'qform__label', style: 'margin-bottom:8px' }, 'لون اسم الملف'),
       el('div', { class: 'colorpick' },
         Cc.colorSquare(curCol, (hex) => { S.study.folderColors[cfg.key] = hex; SM.store.save(); SM.refresh(); label.textContent = hex; }),
         el('div', { class: 'row gap center-v center', style: 'margin-top:12px' }, label,
@@ -512,12 +538,12 @@
     const Cc = SM.C;
     const g = grid();
     g.append(
-      folderCard(S, { key: 'top:study', img: 'assets/folders/study.png', name: 'الدراسة', sub: 'الجداول والمواد والواجبات', hash: '#/p/study/study' }),
-      folderCard(S, { key: 'top:plans', img: 'assets/folders/plans.png', name: 'خطط دراسية', sub: 'SAT وجامعات وترقيات', hash: '#/p/study/plans' }),
+      folderCard(S, { key: 'top:study', color: '#4aa8e8', name: 'الدراسة', sub: 'الجداول والمواد والواجبات', hash: '#/p/study/study' }),
+      folderCard(S, { key: 'top:plans', color: '#2b2f36', name: 'خطط دراسية', sub: 'SAT وجامعات وترقيات', hash: '#/p/study/plans' }),
     );
     (S.study.folders || []).forEach(f => {
       g.append(folderCard(S, {
-        key: 'cf:' + f.id, kind: 'solid', name: f.name, color: f.color, seed: f.id, custom: f,
+        key: 'cf:' + f.id, name: f.name, color: f.color, custom: f,
         sub: `${(f.items || []).length} عنصر`, hash: '#/p/study/cf-' + f.id,
         onDelete: () => Cc.confirm(`حذف مجلد «${f.name}»؟`, () => { S.study.folders.splice(S.study.folders.indexOf(f), 1); SM.store.save(); SM.refresh(); }),
       }));
@@ -547,12 +573,12 @@
   function studyGallery(S) {
     const g = grid();
     g.append(
-      folderCard(S, { key: 'study:schedule', img: 'assets/folders/schedule.png', name: 'الجداول والاختبارات', sub: 'جدول + عدّ تنازلي', hash: '#/p/study/schedule' }),
-      folderCard(S, { key: 'study:subjects', img: 'assets/folders/subjects.png', name: 'المواد', sub: `${S.study.subjects.length} مادة`, hash: '#/p/study/subjects' }),
-      folderCard(S, { key: 'study:homework', kind: 'cork', name: 'الواجبات والمهام', sub: `${S.study.homework.filter(h => !h.done).length} معلّق`, hash: '#/p/study/homework' }),
-      folderCard(S, { key: 'study:notes', kind: 'solid', color: '#60a5fa', name: 'ملاحظات ومراجعة', sub: 'بومودورو + Flashcards', hash: '#/p/study/notes' }),
-      folderCard(S, { key: 'study:grades', kind: 'solid', color: '#34d399', name: 'الأهداف والدرجات', sub: 'معدلك وأهدافك', hash: '#/p/study/grades' }),
-      folderCard(S, { key: 'study:dash', kind: 'solid', color: '#a78bfa', name: 'نظرة عامة', sub: 'لوحة الدراسة', hash: '#/p/study/dash' }),
+      folderCard(S, { key: 'study:schedule', color: '#f59e0b', name: 'الجداول والاختبارات', sub: 'جدول + عدّ تنازلي', hash: '#/p/study/schedule' }),
+      folderCard(S, { key: 'study:subjects', color: '#a855f7', name: 'المواد', sub: `${S.study.subjects.length} مادة`, hash: '#/p/study/subjects' }),
+      folderCard(S, { key: 'study:homework', color: '#fb7185', name: 'الواجبات والمهام', sub: `${S.study.homework.filter(h => !h.done).length} معلّق`, hash: '#/p/study/homework' }),
+      folderCard(S, { key: 'study:notes', color: '#2dd4bf', name: 'ملاحظات ومراجعة', sub: 'بومودورو + Flashcards', hash: '#/p/study/notes' }),
+      folderCard(S, { key: 'study:grades', color: '#22c55e', name: 'الأهداف والدرجات', sub: 'معدلك وأهدافك', hash: '#/p/study/grades' }),
+      folderCard(S, { key: 'study:dash', color: '#6366f1', name: 'نظرة عامة', sub: 'لوحة الدراسة', hash: '#/p/study/dash' }),
     );
     return el('div', {},
       el('div', { class: 'row space center-v', style: 'margin-bottom:12px' }, backChip('#/p/study', 'الملفات الرئيسية'), el('h3', { class: 'card__title' }, '📂 الدراسة')),
@@ -563,9 +589,9 @@
   function plansGallery(S) {
     const g = grid();
     g.append(
-      folderCard(S, { key: 'plans:sat', img: 'assets/folders/sat.png', name: 'SAT', sub: 'تحضير الاختبار', hash: '#/p/study/sat' }),
-      folderCard(S, { key: 'plans:unis', img: 'assets/folders/unis.png', name: 'جامعات أخرى', sub: `${S.study.unis.length} جامعة`, hash: '#/p/study/unis' }),
-      folderCard(S, { key: 'plans:promotions', img: 'assets/folders/promotions.png', name: 'الترقيات', sub: `${S.study.promotions.filter(p => !p.done).length} هدف`, hash: '#/p/study/promotions' }),
+      folderCard(S, { key: 'plans:sat', color: '#818cf8', name: 'SAT', sub: 'تحضير الاختبار', hash: '#/p/study/sat' }),
+      folderCard(S, { key: 'plans:unis', color: '#14b8a6', name: 'جامعات أخرى', sub: `${S.study.unis.length} جامعة`, hash: '#/p/study/unis' }),
+      folderCard(S, { key: 'plans:promotions', color: '#ec4899', name: 'الترقيات', sub: `${S.study.promotions.filter(p => !p.done).length} هدف`, hash: '#/p/study/promotions' }),
     );
     return el('div', {},
       el('div', { class: 'row space center-v', style: 'margin-bottom:12px' }, backChip('#/p/study', 'الملفات الرئيسية'), el('h3', { class: 'card__title' }, '☁️ خطط دراسية')),

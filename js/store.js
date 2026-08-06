@@ -6,7 +6,7 @@
   const DEFAULTS = {
     version: 1,
     profile: { name: 'Joud', avatar: null, homeHero: null, homeHeroDim: true, nameColor: null },
-    settings: { currency: 'ر.س', waterGoal: 8, sportWeeklyGoal: 4, fontAr: 'Cairo', fontEn: 'Space Grotesk' },
+    settings: { currency: 'ر.س', waterGoal: 8, sportWeeklyGoal: 4, fontAr: 'Cairo', fontEn: 'Space Grotesk', planetFonts: {} },
     goals: [],           // {id,title,difficulty,done,createdAt,doneAt}
     habits: [],          // {id,name,planetId,area,createdAt,log:{'YYYY-MM-DD':true}}
     heroes: {},          // planetId -> dataURL
@@ -74,7 +74,8 @@
       unis: [],          // جامعات أخرى {id,name,deadline,status,note}
       promotions: [],    // الترقيات {id,text,done}
       folderNames: {},   // مفتاح المجلد -> اسم مخصّص
-      folderColors: {},  // مفتاح المجلد -> لون اسم المجلد
+      folderColors: {},  // مفتاح المجلد -> لون اسم المجلد (نص)
+      folderIconColors: {}, // مفتاح المجلد -> لون جسم المجلد الزجاجي
     },
   };
 

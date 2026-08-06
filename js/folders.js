@@ -307,5 +307,80 @@
     ctx.closePath();
   }
 
+  /* ============ مجلد زجاجي ثلاثي الأبعاد (Glassmorphism) ============ */
+  function toRgb(hex) {
+    let h = String(hex || '#888').replace('#', '');
+    if (h.length === 3) h = h.split('').map(c => c + c).join('');
+    return [parseInt(h.slice(0, 2), 16) || 0, parseInt(h.slice(2, 4), 16) || 0, parseInt(h.slice(4, 6), 16) || 0];
+  }
+  const cl = (x) => Math.max(0, Math.min(255, Math.round(x)));
+  const mix = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+  const rgb = (a) => `rgb(${cl(a[0])},${cl(a[1])},${cl(a[2])})`;
+  const lighten = (c, t) => mix(toRgb(c), [255, 255, 255], t);
+  const darken = (c, t) => mix(toRgb(c), [8, 10, 18], t);
+
+  let UID = 0;
+
+  // مسار الواجهة الزجاجية الأمامية (جيب المجلد) — حافة علوية منحنية
+  const GLASS = 'M46 100 C 92 112 150 97 194 74 L 194 146 Q 194 164 176 164 L 64 164 Q 46 164 46 146 Z';
+  const GLASS_TOP = 'M46 100 C 92 112 150 97 194 74';
+
+  // ورقة بيضاء مائلة بأسطر نص، تدور حول محور سفلي لتتفرّع كأوراق مروحة
+  function sheet(dx, angle, line) {
+    let lines = '';
+    const ws = [34, 30, 33, 26];
+    for (let i = 0; i < 4; i++) {
+      const y = 62 + i * 8.5;
+      lines += `<rect x="101" y="${y}" width="${ws[i]}" height="3.1" rx="1.6" fill="${line}" fill-opacity="0.8"/>`;
+    }
+    return `<g transform="translate(${dx} 0) rotate(${angle} 120 152)">` +
+      `<rect x="93" y="50" width="54" height="100" rx="7" fill="#fdfdfe"/>` +
+      `<rect x="93" y="50" width="54" height="100" rx="7" fill="none" stroke="#000" stroke-opacity="0.04" stroke-width="1"/>` +
+      lines + `</g>`;
+  }
+
+  /* يبني أيقونة مجلد زجاجي شفاف بلون معيّن — يُرجع عنصر SVG */
+  F.glossy = function (color, opts = {}) {
+    const u = 'gf' + (++UID);
+    const col = color || '#4aa8e8';
+    const backTop = rgb(lighten(col, 0.20));
+    const backBot = rgb(darken(col, 0.10));
+    const gTop = rgb(lighten(col, 0.40));
+    const gBot = rgb(lighten(col, 0.06));
+    const line = rgb(lighten(col, 0.45));
+    const svg =
+`<svg viewBox="0 0 240 210" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" role="img" aria-hidden="true">
+<defs>
+<linearGradient id="${u}b" x1="0.15" y1="0" x2="0.7" y2="1">
+<stop offset="0" stop-color="${backTop}"/><stop offset="1" stop-color="${backBot}"/>
+</linearGradient>
+<linearGradient id="${u}g" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" stop-color="${gTop}" stop-opacity="0.62"/><stop offset="1" stop-color="${gBot}" stop-opacity="0.5"/>
+</linearGradient>
+<linearGradient id="${u}h" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" stop-color="#ffffff" stop-opacity="0.55"/><stop offset="0.5" stop-color="#ffffff" stop-opacity="0"/>
+</linearGradient>
+<filter id="${u}d" x="-45%" y="-35%" width="190%" height="180%">
+<feDropShadow dx="0" dy="7" stdDeviation="8" flood-color="#0a0f1e" flood-opacity="0.4"/>
+</filter>
+<filter id="${u}bl" x="-25%" y="-25%" width="150%" height="150%"><feGaussianBlur stdDeviation="2.4"/></filter>
+<clipPath id="${u}c"><path d="${GLASS}"/></clipPath>
+</defs>
+<rect x="46" y="58" width="148" height="106" rx="19" fill="url(#${u}b)" filter="url(#${u}d)"/>
+<path d="M65 58 H175 Q194 58 194 77 V80 H46 V77 Q46 58 65 58 Z" fill="#ffffff" fill-opacity="0.12"/>
+<g id="${u}p">${sheet(-5, -11, line)}${sheet(0, -1, line)}${sheet(6, 9, line)}</g>
+<g clip-path="url(#${u}c)">
+<use href="#${u}p" xlink:href="#${u}p" filter="url(#${u}bl)"/>
+<path d="${GLASS}" fill="url(#${u}g)"/>
+<path d="${GLASS}" fill="url(#${u}h)"/>
+</g>
+<path d="${GLASS_TOP}" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="1.4" stroke-linecap="round"/>
+<path d="${GLASS}" fill="none" stroke="${rgb(lighten(col, 0.15))}" stroke-opacity="0.35" stroke-width="1"/>
+</svg>`;
+    const wrap = document.createElement('div');
+    wrap.innerHTML = svg;
+    return wrap.firstElementChild;
+  };
+
   SM.folders = F;
 })();

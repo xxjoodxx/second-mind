@@ -2,22 +2,28 @@
 (function () {
   const U = SM.U, el = SM.el;
 
-  /* اختيار الخطوط — متاح من صفحة الكوكب أيضًا */
-  function fontsModal() {
+  /* اختيار الخطوط — خاص بهذا الكوكب فقط (منفصل عن الواجهة الرئيسية) */
+  function fontsModal(p) {
     const Cc = SM.C, S = SM.store.state;
-    const mk = (list, key, fallback, isEn) => {
+    S.settings.planetFonts = S.settings.planetFonts || {};
+    const getPf = () => (S.settings.planetFonts[p.id] = S.settings.planetFonts[p.id] || {});
+    const mk = (list, key, isEn) => {
+      const cur = (S.settings.planetFonts[p.id] || {})[key] || (isEn ? S.settings.fontEn : S.settings.fontAr);
       const sel = el('select', {
-        class: 'inp', style: `font-family:'${S.settings[key]}',${isEn ? 'monospace' : 'sans-serif'}`,
-        on: { change: (e) => { S.settings[key] = e.target.value; SM.store.save(); SM.applyFonts(); sel.style.fontFamily = `'${e.target.value}',${isEn ? 'monospace' : 'sans-serif'}`; } },
-      }, list.map(f => el('option', { value: f, selected: S.settings[key] === f, style: `font-family:'${f}',${isEn ? 'monospace' : 'sans-serif'}` }, f)));
+        class: 'inp', style: `font-family:'${cur}',${isEn ? 'monospace' : 'sans-serif'}`,
+        on: { change: (e) => { getPf()[key] = e.target.value; SM.store.save(); SM.applyFonts(); sel.style.fontFamily = `'${e.target.value}',${isEn ? 'monospace' : 'sans-serif'}`; SM.refresh(); } },
+      }, list.map(f => el('option', { value: f, selected: cur === f, style: `font-family:'${f}',${isEn ? 'monospace' : 'sans-serif'}` }, f)));
       return sel;
     };
-    Cc.modal('🔤 خطوط النصوص', el('div', { class: 'settings' },
+    Cc.modal('🔤 خطوط كوكب ' + p.name, el('div', { class: 'settings' },
       el('div', { class: 'row gap wrap' },
-        el('label', { class: 'qform__field' }, el('span', { class: 'qform__label' }, 'الخط العربي'), mk(SM.FONTS.ar, 'fontAr', 'Cairo', false)),
-        el('label', { class: 'qform__field' }, el('span', { class: 'qform__label' }, 'الخط الإنجليزي والأرقام'), mk(SM.FONTS.en, 'fontEn', 'Space Grotesk', true)),
+        el('label', { class: 'qform__field' }, el('span', { class: 'qform__label' }, 'الخط العربي'), mk(SM.FONTS.ar, 'ar', false)),
+        el('label', { class: 'qform__field' }, el('span', { class: 'qform__label' }, 'الخط الإنجليزي والأرقام'), mk(SM.FONTS.en, 'en', true)),
       ),
-      el('p', { class: 'hint' }, 'يُطبَّق على الموقع كامل فورًا'),
+      el('div', { class: 'row gap center-v', style: 'margin-top:6px' },
+        el('button', { class: 'btn btn--sm', on: { click: () => { delete S.settings.planetFonts[p.id]; SM.store.save(); SM.applyFonts(); SM.refresh(); } } }, '↺ الخط الافتراضي'),
+      ),
+      el('p', { class: 'hint' }, 'يُطبَّق على هذا الكوكب فقط — لا يؤثّر على الواجهة الرئيسية'),
     ));
   }
 
@@ -58,6 +64,16 @@
       class: 'pp' + (hero ? ' pp--img' : (p.custom ? ' pp--custom' : ' pp--' + p.id)),
       style: `--pc:${p.color};`,
     });
+    // خط خاص بهذا الكوكب فقط (منفصل عن الواجهة الرئيسية)
+    if (SM.applyFonts) SM.applyFonts();
+    const pfont = (S.settings.planetFonts || {})[p.id];
+    if (pfont && (pfont.ar || pfont.en) && SM.fontVars) {
+      const v = SM.fontVars(pfont.ar || S.settings.fontAr, pfont.en || S.settings.fontEn);
+      // نضبط المتغيّرين ونُعيد تقييم font-family على هذا الفرع فقط
+      pp.style.setProperty('--font', v.ar);
+      pp.style.setProperty('--font-en', v.en);
+      pp.style.fontFamily = 'var(--font)';
+    }
     pp.append(el('i', { class: 'pp__overlay' }));
 
     /* الشريط العلوي — أزرار زجاجية دائرية، بلا خط سفلي */
@@ -68,7 +84,7 @@
         el('h1', { class: p.rainbow ? 'rainbow-text' : '' }, 'كوكب ', p.name),
       ),
       el('div', { class: 'row gap-s' },
-        el('button', { class: 'ppbtn glass--sheen', title: 'الخطوط', on: { click: fontsModal } }, '🔤 الخطوط'),
+        el('button', { class: 'ppbtn glass--sheen', title: 'الخطوط', on: { click: () => fontsModal(p) } }, '🔤 الخطوط'),
         el('button', { class: 'ppbtn glass--sheen', title: 'الخلفية', on: { click: () => heroModal(p) } }, '🖼️ الخلفية'),
       ),
     ));

@@ -517,7 +517,8 @@ textarea.inp { resize: vertical; line-height: 1.7; }
 /* ============ صفحة الكوكب ============ */
 .pp { min-height: 100vh; position: relative; background-size: cover; background-position: center; padding-bottom: 50px; }
 .pp__overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(4, 6, 16, .62), rgba(4, 6, 16, .88) 55%, rgba(4, 6, 16, .95)); pointer-events: none; }
-.pp--img .pp__overlay { background: linear-gradient(180deg, rgba(4, 6, 16, .55), rgba(4, 6, 16, .85) 55%, rgba(4, 6, 16, .94)); }
+/* خلفية مخصّصة: حجاب معتم شبه منتظم يغطّي الإطار كاملًا (بلا شريط ساطع بالأعلى) */
+.pp--img .pp__overlay { background: linear-gradient(180deg, rgba(4, 6, 16, .8), rgba(4, 6, 16, .82) 45%, rgba(4, 6, 16, .86)); }
 
 .pp--health { background-image: radial-gradient(60% 45% at 82% 0%, rgba(52, 211, 153, .35), transparent 65%), radial-gradient(55% 55% at 8% 75%, rgba(16, 185, 129, .22), transparent 65%), linear-gradient(200deg, #08130f, #05060f); }
 .pp--learning { background-image: radial-gradient(60% 45% at 82% 0%, rgba(56, 189, 248, .35), transparent 65%), radial-gradient(55% 55% at 8% 75%, rgba(59, 130, 246, .22), transparent 65%), linear-gradient(200deg, #07101d, #05060f); }
